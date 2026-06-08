@@ -1,36 +1,54 @@
 # Movie God (Curation Only)
 
-OTT 영화 네거티브 큐레이션 — 평론가 점수(Metacritic · Rotten Tomatoes)만으로 명작과 쓰레기를 걸러냅니다.
+OTT 영화 네거티브 큐레이션 — 평론가 점수(Metacritic · Rotten Tomatoes)만으로 명작/쓰레기를 분류합니다.
+
+## 아키텍처 (Pre-Render)
+
+```
+[일 1회 배치] GitHub Actions / Render Cron
+  JustWatch → OMDb → tier 분류 → DB 또는 data/snapshots/*.json 저장
+
+[유저 요청] /api/tiers
+  저장된 스냅샷만 읽기 (~50ms) — 외부 API 호출 없음
+```
 
 ## 로컬 실행
 
 ```bash
 npm install
-npm run dev
+npm run sync:tiers    # 최초 1회 필수 — 4개 OTT 스냅샷 생성
+npm run dev           # http://localhost:3002
 ```
 
-http://localhost:3002
+## 배치 (sync:tiers)
 
-## Render 배포 (GitHub 연동)
+```bash
+npm run sync:tiers
+```
 
-1. [Render](https://render.com) → **New +** → **Blueprint**
-2. `juyeon0303/movie_god` 저장소 연결
-3. `render.yaml`이 자동으로 Web Service 생성
-4. (선택) Environment에 API 키 추가:
-   - `OMDB_API_KEY` — 없으면 demo key 사용
-   - `TMDB_API_KEY` — 한글 메타데이터 보강
-   - `OPENAI_API_KEY` — 무드 검색 AI 한줄평
+- **파일 모드 (기본):** `data/snapshots/{nfx,dnp,wav,tvk}.json`
+- **DB 모드 (선택):** `DATABASE_URL` 설정 시 PostgreSQL upsert + 파일 백업
 
-또는 **New Web Service**로 수동 생성:
+## GitHub Actions
+
+`.github/workflows/sync-tiers.yml` — 매일 12:00 KST 자동 실행
+
+1. 4대 OTT 스캔 + OMDb 점수
+2. JSON 스냅샷 커밋 → Render 자동 재배포
+
+수동 실행: GitHub → Actions → **Sync OTT Tier Snapshots** → Run workflow
+
+## Render 배포
 
 | 항목 | 값 |
 |------|-----|
-| Build Command | `npm install && npm run build` |
-| Start Command | `npm start` |
-| Health Check | `/api/health` |
+| Build | `npm install --include=dev && npm run build` |
+| Start | `npm start` |
+| Health | `/api/health` |
+| Cron | `render.yaml`의 `movie-god-sync` (매일 03:00 UTC) |
 
-Render가 `PORT` 환경변수를 주입하면 Next.js가 자동으로 해당 포트에서 서비스합니다.
+선택 환경변수: `DATABASE_URL`, `OMDB_API_KEY`, `TMDB_API_KEY`
 
 ## 지원 OTT
 
-Netflix · Disney+ · Wavve · TVING
+Netflix (`nfx`) · Disney+ (`dnp`) · Wavve (`wav`) · TVING (`tvk`)

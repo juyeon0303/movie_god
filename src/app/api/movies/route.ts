@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchCuratedMovies } from "@/lib/pipeline";
 import { generateCriticLine, generateTrashCriticLine } from "@/lib/critic";
 import { jsonCached } from "@/lib/http";
+import { readFilteredMovies, SnapshotNotFoundError } from "@/lib/snapshot-read";
 import type { CurationFilters, OTTPlatform } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -20,10 +20,9 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const filters: CurationFilters = { platform, mode };
-    const filtered = await fetchCuratedMovies(platform, filters);
+    const { movies, fetchedAt } = await readFilteredMovies(platform, { platform, mode });
 
-    const movies = filtered.map((m) => {
+    const enriched = movies.map((m) => {
       if (mode === "trash") {
         return { ...m, criticLine: generateTrashCriticLine(m) };
       }
@@ -34,13 +33,20 @@ export async function GET(request: NextRequest) {
     });
 
     return jsonCached({
-      movies,
-      total: movies.length,
+      movies: enriched,
+      total: enriched.length,
       platform,
       tmdbEnriched: !!process.env.TMDB_API_KEY,
-      fetchedAt: new Date().toISOString(),
+      fetchedAt,
+      source: "snapshot",
     });
   } catch (error) {
+    if (error instanceof SnapshotNotFoundError) {
+      return NextResponse.json(
+        { error: "스냅샷이 아직 없습니다.", syncRequired: true },
+        { status: 503 }
+      );
+    }
     console.error("Movies API error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to fetch movies" },

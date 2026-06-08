@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchTieredMovies } from "@/lib/pipeline";
 import { generateCriticLine, generateTrashCriticLine } from "@/lib/critic";
 import { jsonCached } from "@/lib/http";
+import { readTieredMovies, SnapshotNotFoundError } from "@/lib/snapshot-read";
 import type { OTTPlatform } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -17,24 +17,31 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const { curated, trash, all } = await fetchTieredMovies(platform);
-
-    const verified =
-      curated.filter((m) => m.ottVerified).length +
-      trash.filter((m) => m.ottVerified).length;
+    const { curated, trash, all, fetchedAt, ottVerified } =
+      await readTieredMovies(platform);
 
     return jsonCached({
       curated: curated.map((m) => ({ ...m, criticLine: generateCriticLine(m) })),
       trash: trash.map((m) => ({ ...m, criticLine: generateTrashCriticLine(m) })),
       all,
       platform,
-      ottVerified: verified,
-      fetchedAt: new Date().toISOString(),
+      ottVerified,
+      fetchedAt,
+      source: "snapshot",
     });
   } catch (error) {
+    if (error instanceof SnapshotNotFoundError) {
+      return NextResponse.json(
+        {
+          error: "스냅샷이 아직 없습니다. sync-tiers 배치를 먼저 실행해 주세요.",
+          syncRequired: true,
+        },
+        { status: 503 }
+      );
+    }
     console.error("Tiers API error:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to fetch tiers" },
+      { error: error instanceof Error ? error.message : "Failed to load tiers" },
       { status: 500 }
     );
   }

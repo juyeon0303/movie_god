@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 const API_CACHE_CONTROL =
-  "public, s-maxage=3600, stale-while-revalidate=86400";
+  "public, s-maxage=86400, stale-while-revalidate=604800";
 
 export function jsonCached(data: unknown, init?: ResponseInit): NextResponse {
   return NextResponse.json(data, {

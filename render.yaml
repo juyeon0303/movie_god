@@ -9,9 +9,25 @@ services:
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
+      - key: DATABASE_URL
+        sync: false
       - key: OMDB_API_KEY
         sync: false
       - key: TMDB_API_KEY
         sync: false
       - key: OPENAI_API_KEY
+        sync: false
+
+  - type: cron
+    name: movie-god-sync
+    runtime: node
+    schedule: "0 3 * * *"
+    buildCommand: npm install --include=dev
+    startCommand: npm run sync:tiers
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: OMDB_API_KEY
+        sync: false
+      - key: TMDB_API_KEY
         sync: false

@@ -17,46 +17,34 @@ export function Dashboard() {
   const [trashMovies, setTrashMovies] = useState<CuratedMovie[]>([]);
   const [allMovies, setAllMovies] = useState<CuratedMovie[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingHint, setLoadingHint] = useState("영화 목록 불러오는 중...");
   const [error, setError] = useState("");
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError("");
-    setLoadingHint("OTT 목록 확인 중...");
-
-    const hintTimer = window.setTimeout(() => {
-      setLoadingHint("평론가 점수 조회 중... 첫 로딩은 30~60초 걸릴 수 있어요.");
-    }, 8000);
-
-    const controller = new AbortController();
-    const timeoutTimer = window.setTimeout(() => controller.abort(), 120000);
 
     try {
-      const tiersRes = await fetch(`/api/tiers?platform=${platform}`, {
-        signal: controller.signal,
-      });
+      const tiersRes = await fetch(`/api/tiers?platform=${platform}`);
       const tiersData = await tiersRes.json();
 
-      if (!tiersRes.ok) throw new Error(tiersData.error);
+      if (!tiersRes.ok) {
+        if (tiersData.syncRequired) {
+          throw new Error(
+            "영화 데이터가 아직 준비되지 않았어요. GitHub Actions sync-tiers 워크플로를 실행해 주세요."
+          );
+        }
+        throw new Error(tiersData.error);
+      }
 
       setCuratedMovies(tiersData.curated ?? []);
       setTrashMovies(tiersData.trash ?? []);
       setAllMovies(tiersData.all ?? []);
     } catch (err) {
-      const message =
-        err instanceof Error && err.name === "AbortError"
-          ? "로딩 시간이 초과됐어요. 잠시 후 다시 시도해 주세요."
-          : err instanceof Error
-            ? err.message
-            : "Failed to load";
-      setError(message);
+      setError(err instanceof Error ? err.message : "Failed to load");
       setCuratedMovies([]);
       setTrashMovies([]);
       setAllMovies([]);
     } finally {
-      window.clearTimeout(hintTimer);
-      window.clearTimeout(timeoutTimer);
       setLoading(false);
     }
   }, [platform]);
@@ -137,10 +125,6 @@ export function Dashboard() {
                 다시 시도
               </button>
             </div>
-          )}
-
-          {loading && (
-            <p className="mb-4 text-center text-sm text-zinc-400">{loadingHint}</p>
           )}
 
           {loading && (
