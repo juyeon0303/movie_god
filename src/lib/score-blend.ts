@@ -34,3 +34,17 @@ export function hasAnyCriticInput(scores: MovieScores): boolean {
     scores.rottenTomatoes !== undefined
   );
 }
+
+export function countCriticSources(scores: MovieScores): number {
+  return [
+    scores.leeDongjin !== undefined,
+    scores.metacritic !== undefined,
+    scores.rottenTomatoes !== undefined,
+  ].filter(Boolean).length;
+}
+
+/** 명작(천국) — Metacritic(복수 비평가) 또는 독립 소스 2개 이상. RT/LDJ 단독은 표본 부족 */
+export function hasAdequateCriticSample(scores: MovieScores): boolean {
+  if (scores.metacritic !== undefined) return true;
+  return countCriticSources(scores) >= 2;
+}

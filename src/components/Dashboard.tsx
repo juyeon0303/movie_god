@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { RefreshCw } from "lucide-react";
 import type { CuratedMovie, OTTPlatform } from "@/lib/types";
 import { Header } from "./Header";
 import { PlatformFilter } from "./PlatformFilter";
@@ -8,19 +10,24 @@ import { MovieCard } from "./MovieCard";
 import { TrashWarning } from "./TrashWarning";
 import { MoodSearch } from "./MoodSearch";
 import { TrashGateModal } from "./TrashGateModal";
-
-type ViewMode = "curated" | "trash";
+import { ModeToggle, type ViewMode } from "./ModeToggle";
+import { getMoviePageSize, MoviePagination } from "./MoviePagination";
+import { BrandLogo } from "./BrandLogo";
+import { PLATFORMS } from "@/lib/types";
+import { WakeUpWait } from "./WakeUpWait";
 
 export function Dashboard() {
   const [platform, setPlatform] = useState<OTTPlatform>("nfx");
   const [mode, setMode] = useState<ViewMode>("curated");
+  const [page, setPage] = useState(1);
   const [showTrashGate, setShowTrashGate] = useState(false);
+  const [slashAnim, setSlashAnim] = useState(false);
   const [curatedMovies, setCuratedMovies] = useState<CuratedMovie[]>([]);
   const [trashMovies, setTrashMovies] = useState<CuratedMovie[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const isHell = mode === "trash";
+  const isTrash = mode === "trash";
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -33,7 +40,7 @@ export function Dashboard() {
       if (!tiersRes.ok) {
         if (tiersData.syncRequired) {
           throw new Error(
-            "영화 데이터가 아직 준비되지 않았어요. GitHub Actions sync-tiers 워크플로를 실행해 주세요."
+            "데이터 없음. GitHub Actions sync-tiers를 실행하거나 git pull 하세요."
           );
         }
         throw new Error(tiersData.error);
@@ -54,90 +61,81 @@ export function Dashboard() {
     fetchData();
   }, [fetchData]);
 
+  useEffect(() => {
+    setPage(1);
+  }, [platform, mode]);
+
   function handleModeSelect(next: ViewMode) {
     if (next === "trash" && mode !== "trash") {
       setShowTrashGate(true);
       return;
     }
+    if (next === "curated" && mode === "trash") {
+      setSlashAnim(true);
+      window.setTimeout(() => setSlashAnim(false), 600);
+    }
     setMode(next);
   }
 
-  function enterHell() {
+  function enterTrash() {
     setShowTrashGate(false);
+    setSlashAnim(true);
     setMode("trash");
+    window.setTimeout(() => setSlashAnim(false), 600);
   }
 
-  const movies = isHell ? trashMovies : curatedMovies;
-  const displayMovies = isHell
-    ? movies.map((m) => ({ ...m, isTrash: true }))
-    : movies;
-
-  const modeTabs: { id: ViewMode; label: string; desc: string }[] = [
-    { id: "curated", label: "☁️ 천국", desc: "평론가 75+" },
-    { id: "trash", label: "🔥 지옥", desc: "MC 45↓ · RT Rotten" },
-  ];
+  const movies = isTrash ? trashMovies : curatedMovies;
+  const pageSize = getMoviePageSize();
+  const totalPages = Math.max(1, Math.ceil(movies.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pageSlice = movies.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const displayMovies = isTrash
+    ? pageSlice.map((m) => ({ ...m, isTrash: true }))
+    : pageSlice;
 
   return (
     <div
-      className={`min-h-screen transition-colors duration-500 ${
-        isHell ? "hell-theme bg-[#0c0303]" : "heaven-theme bg-[#0a0a0f]"
+      className={`trashcut-theme relative min-h-screen bg-void transition-colors duration-300 ${
+        isTrash ? "trash-mode" : ""
       }`}
     >
-      <div
-        className={`pointer-events-none fixed inset-0 transition-opacity duration-500 ${
-          isHell
-            ? "bg-[radial-gradient(ellipse_at_top,_rgba(220,38,38,0.15)_0%,_transparent_55%)] opacity-100"
-            : "bg-[radial-gradient(ellipse_at_top,_rgba(251,191,36,0.08)_0%,_transparent_50%)] opacity-100"
-        }`}
-      />
-      {isHell && <div className="hell-scanlines pointer-events-none fixed inset-0" />}
+      {isTrash && (
+        <div className="trash-scanlines pointer-events-none fixed inset-0 z-0" aria-hidden />
+      )}
+      {slashAnim && <div className="cut-slash fixed inset-0 z-30" aria-hidden />}
 
       <TrashGateModal
         open={showTrashGate}
-        onConfirm={enterHell}
+        onConfirm={enterTrash}
         onCancel={() => setShowTrashGate(false)}
       />
 
       <Header mode={mode} />
 
-      <main className="relative mx-auto max-w-7xl px-6 py-8">
+      <main className="relative z-10 mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
         <section className="mb-8">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <PlatformFilter selected={platform} onChange={setPlatform} />
-
-            <div
-              className={`flex gap-2 rounded-2xl p-1.5 transition-colors ${
-                isHell ? "bg-red-950/50 ring-1 ring-red-500/30" : "bg-white/5"
-              }`}
-            >
-              {modeTabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => handleModeSelect(tab.id)}
-                  className={`flex flex-1 flex-col items-center rounded-xl px-4 py-3 transition-all sm:min-w-[140px] ${
-                    mode === tab.id
-                      ? tab.id === "trash"
-                        ? "bg-red-600 text-white shadow-[0_0_20px_rgba(239,68,68,0.5)]"
-                        : "bg-amber-500/20 text-amber-100 ring-1 ring-amber-400/40"
-                      : tab.id === "trash"
-                        ? "text-red-400/60 hover:bg-red-950/40 hover:text-red-300"
-                        : "text-zinc-500 hover:bg-white/5 hover:text-zinc-300"
-                  }`}
-                >
-                  <span className="text-sm font-bold">{tab.label}</span>
-                  <span className="mt-0.5 text-[10px] opacity-70">{tab.desc}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+          <ModeToggle mode={mode} onChange={handleModeSelect} />
         </section>
 
-        {!isHell && (
+        <section className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <PlatformFilter selected={platform} onChange={setPlatform} mode={mode} />
+          {!loading && (
+            <p className="font-ui text-xs font-semibold tracking-wide sm:text-sm">
+              <span style={{ color: PLATFORMS[platform].color }}>{PLATFORMS[platform].name}</span>
+              <span className="text-silver"> · </span>
+              <span className={isTrash ? "text-laser" : "text-gold"}>
+                {isTrash ? "Trash" : "Approved"} {movies.length}
+              </span>
+            </p>
+          )}
+        </section>
+
+        {!isTrash && (
           <>
-            <section className="mb-10">
+            <section className="mb-8">
               <MoodSearch platform={platform} />
             </section>
-            <section className="mb-10">
+            <section className="mb-8">
               <TrashWarning
                 movies={trashMovies}
                 loading={loading}
@@ -147,116 +145,104 @@ export function Dashboard() {
           </>
         )}
 
-        {isHell && !loading && (
-          <section className="hell-alert-bar mb-8 rounded-2xl border-2 border-red-500/60 bg-red-950/40 p-6">
-            <div className="flex items-center gap-3">
-              <span className="animate-pulse text-3xl">🚨</span>
-              <h2
-                className="glitch-text text-2xl font-black text-red-400"
-                data-text="시간 낭비 주의 구역"
-              >
-                시간 낭비 주의 구역
-              </h2>
-            </div>
-            <p className="mt-3 text-sm leading-relaxed text-red-200/90">
-              Metacritic 45↓ · RT Rotten — 진짜 핵쓰레기만.
-              <br />
-              <span className="font-bold text-red-300">
-                돈과 시간을 버리시겠습니까? 각 카드의 시청 링크를 누르면 다시 물어봅니다.
-              </span>
+        {isTrash && !loading && (
+          <motion.section
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8 border border-laser/25 bg-surface p-5 shadow-sm"
+          >
+            <h2 className="font-ui text-sm font-semibold text-laser sm:text-base">
+              Trash <span className="text-laser">Cut</span> 목록
+            </h2>
+            <p className="font-ui mt-2 text-sm leading-relaxed text-panel-muted">
+              평론 점수 기준으로 분류된 작품이에요. 시청 전 한 번 더 확인해 주세요.
             </p>
-          </section>
+          </motion.section>
         )}
 
         <section>
-          <div className="mb-6 flex items-baseline justify-between">
+          <div className="mb-5 flex items-end justify-between border-b border-border pb-3">
             <h2
-              className={`text-lg font-semibold ${
-                isHell ? "glitch-text text-red-300" : "text-white"
+              className={`font-ui text-sm font-bold ${
+                isTrash ? "text-laser" : "text-gold"
               }`}
-              data-text={isHell ? "🔥 지옥 목록" : "☁️ 오늘의 명작"}
             >
-              {isHell ? "🔥 지옥 목록" : "☁️ 오늘의 명작"}
+              {isTrash ? (
+                <>
+                  Trash <span className="neon-laser">Cut</span> 목록
+                </>
+              ) : (
+                "Approved 목록"
+              )}
             </h2>
-            {!loading && (
-              <span className={`text-sm ${isHell ? "text-red-400/70" : "text-zinc-500"}`}>
-                {movies.length}편
-              </span>
-            )}
           </div>
 
           {error && (
-            <div className="rounded-xl border border-red-500/30 bg-red-950/30 p-4 text-red-300">
-              <p>{error}</p>
+            <div className="mb-6 border border-laser/30 bg-surface p-4 shadow-sm">
+              <p className="font-ui text-sm text-laser">{error}</p>
               <button
                 type="button"
                 onClick={fetchData}
-                className="mt-3 rounded-lg bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/20"
+                className="font-ui mt-3 inline-flex items-center gap-2 border border-panel-border bg-surface px-4 py-2 text-xs text-panel-ink hover:border-gold/40"
               >
-                다시 시도
+                <RefreshCw className="h-3.5 w-3.5" />
+                Retry
               </button>
             </div>
           )}
 
-          {loading && (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-              {Array.from({ length: 10 }).map((_, i) => (
-                <div
-                  key={i}
-                  className={`animate-pulse rounded-2xl ${
-                    isHell ? "bg-red-950/30" : "bg-white/5"
-                  }`}
-                >
-                  <div
-                    className={`aspect-[2/3] rounded-t-2xl ${
-                      isHell ? "bg-red-900/30" : "bg-white/10"
-                    }`}
-                  />
-                  <div className="space-y-2 p-4">
-                    <div
-                      className={`h-4 w-3/4 rounded ${
-                        isHell ? "bg-red-900/30" : "bg-white/10"
-                      }`}
-                    />
-                    <div
-                      className={`h-3 w-1/2 rounded ${
-                        isHell ? "bg-red-900/20" : "bg-white/5"
-                      }`}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <WakeUpWait
+            active={loading}
+            variant="page"
+            accent={isTrash ? "laser" : "gold"}
+          />
 
           {!loading && !error && movies.length === 0 && (
-            <p className={`py-12 text-center ${isHell ? "text-red-400/60" : "text-zinc-500"}`}>
-              {isHell ? "이 OTT에는 지옥행 영화가 없습니다. 다행이네요." : "명작이 아직 없습니다."}
+            <p className="font-ui py-20 text-center text-sm text-silver">
+              {isTrash ? "이 OTT에 Trash Cut 작품이 없어요." : "Approved 목록이 비어 있어요."}
             </p>
           )}
 
+          <AnimatePresence mode="wait">
+            {!loading && movies.length > 0 && (
+              <motion.div
+                key={`${platform}-${mode}-${safePage}`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+              >
+                {displayMovies.map((movie, i) => (
+                  <motion.div
+                    key={movie.id}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: Math.min(i * 0.03, 0.3) }}
+                  >
+                    <MovieCard movie={movie} showCritic hellMode={isTrash} />
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {!loading && movies.length > 0 && (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-              {displayMovies.map((movie) => (
-                <MovieCard
-                  key={movie.id}
-                  movie={movie}
-                  showCritic
-                  hellMode={isHell}
-                />
-              ))}
-            </div>
+            <MoviePagination
+              total={movies.length}
+              page={safePage}
+              onChange={setPage}
+              mode={mode}
+            />
           )}
         </section>
 
-        <footer
-          className={`mt-16 border-t py-8 text-center text-xs ${
-            isHell ? "border-red-900/50 text-red-900/80" : "border-white/5 text-zinc-600"
-          }`}
-        >
-          <p>Curation Only — 콘텐츠 인플레이션 시대의 오마카세 큐레이션</p>
-          <p className="mt-1">
-            판정: 이동진(35%)·MC(40%)·RT(25%) 블렌드 — 인기도·관객 점수 미사용
+        <footer className="mt-20 border-t border-border py-8 text-center">
+          <p className="flex justify-center">
+            <BrandLogo size="sm" className="text-ink" />
+          </p>
+          <p className="font-ui mt-2 text-xs text-silver sm:text-sm">
+            LDJ 35% · MC 40% · RT 25% — audience scores excluded
           </p>
         </footer>
       </main>

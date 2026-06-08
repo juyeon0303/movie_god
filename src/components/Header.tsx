@@ -1,61 +1,56 @@
-type HeaderMode = "curated" | "trash";
+"use client";
+
+import { motion } from "framer-motion";
+import { BrandLogo } from "./BrandLogo";
+import type { ViewMode } from "./ModeToggle";
 
 interface HeaderProps {
-  mode?: HeaderMode;
+  mode?: ViewMode;
 }
 
 export function Header({ mode = "curated" }: HeaderProps) {
-  const isHell = mode === "trash";
+  const isTrash = mode === "trash";
 
   return (
     <header
-      className={`border-b backdrop-blur-xl transition-colors duration-500 ${
-        isHell
-          ? "border-red-500/30 bg-red-950/40"
-          : "border-white/10 bg-black/40"
+      className={`sticky top-0 z-40 border-b backdrop-blur-md transition-colors duration-300 ${
+        isTrash ? "border-laser/30 bg-surface/95" : "border-panel-border bg-surface/95"
       }`}
     >
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
-        <div>
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 sm:py-5">
+        <motion.div layout="position" className="min-w-0">
           <p
-            className={`text-xs font-medium uppercase tracking-[0.3em] ${
-              isHell ? "text-red-400/80" : "text-amber-400/80"
+            className={`font-ui text-xs font-medium uppercase tracking-[0.2em] ${
+              isTrash ? "text-laser/90" : "text-panel-muted"
             }`}
           >
-            {isHell ? "Enter At Your Own Risk" : "Negative Curation"}
-          </p>
-          <h1 className="mt-1 text-2xl font-light tracking-tight text-white">
-            {isHell ? (
-              <>
-                <span className="glitch-text font-black text-red-400" data-text="지옥">
-                  지옥
-                </span>
-                <span className="text-red-200/50"> · </span>
-                <span className="font-semibold text-red-300/80">Trash Only</span>
-              </>
+            {isTrash ? (
+              "평론 점수 하위 구간"
             ) : (
               <>
-                Curation <span className="font-semibold text-amber-300">Only</span>
+                <span className="text-laser font-semibold">Cut</span> The Trash
               </>
             )}
+          </p>
+          <h1 className="mt-1.5">
+            <BrandLogo className="text-panel-ink" />
           </h1>
-        </div>
+        </motion.div>
+
         <p
-          className={`hidden max-w-xs text-right text-sm sm:block ${
-            isHell ? "text-red-300/70" : "text-zinc-400"
-          }`}
+          className="font-ui hidden max-w-[260px] text-right text-sm leading-relaxed text-panel-muted lg:block"
         >
-          {isHell ? (
+          {isTrash ? (
             <>
-              돈과 시간을 버리시겠습니까?
+              <span className="font-medium text-panel-muted">평론 점수 기준</span>
               <br />
-              <span className="text-red-400/60">MC 45↓ · RT Rotten · 핵쓰레기만</span>
+              <span className="font-semibold text-laser">Trash Cut 목록</span>
             </>
           ) : (
             <>
-              쓰레기는 걸러내고, 명작만 남긴다.
+              <span className="font-medium text-gold">이동진 · MC · RT</span>
               <br />
-              <span className="text-zinc-500">이동진·MC·RT 블렌드 · 75+</span>
+              <span className="font-semibold text-gold">블렌드 75+ 명작만</span>
             </>
           )}
         </p>

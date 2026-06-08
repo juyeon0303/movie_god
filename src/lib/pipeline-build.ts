@@ -24,9 +24,16 @@ function countTiers(movies: CuratedMovie[]): { curated: number; trash: number } 
   return { curated, trash };
 }
 
-function tierTargetsMet(movies: CuratedMovie[]): boolean {
+function shouldStopEnriching(
+  movies: CuratedMovie[],
+  processedCount: number,
+  totalVerified: number
+): boolean {
+  if (processedCount >= totalVerified) return true;
   const { curated, trash } = countTiers(movies);
-  return curated >= SYNC_PIPELINE.minCurated && trash >= SYNC_PIPELINE.minTrash;
+  return (
+    curated >= SYNC_PIPELINE.targetCurated && trash >= SYNC_PIPELINE.minTrash
+  );
 }
 
 async function enrichChunk(movies: CuratedMovie[]): Promise<CuratedMovie[]> {
@@ -51,7 +58,8 @@ export async function buildEnrichedPool(platform: OTTPlatform): Promise<CuratedM
     const chunk = verified.slice(i, i + SYNC_PIPELINE.enrichChunk);
     const enriched = await enrichChunk(chunk);
     pool.push(...onlyCriticScored(enriched));
-    if (tierTargetsMet(pool)) break;
+    const processed = Math.min(i + SYNC_PIPELINE.enrichChunk, verified.length);
+    if (shouldStopEnriching(pool, processed, verified.length)) break;
   }
 
   const { curated, trash } = countTiers(pool);

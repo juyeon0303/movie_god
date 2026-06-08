@@ -1,9 +1,13 @@
-import { blendCriticScore, hasAnyCriticInput } from "./score-blend";
+import {
+  blendCriticScore,
+  hasAnyCriticInput,
+  hasAdequateCriticSample,
+} from "./score-blend";
 import type { CuratedMovie, CurationFilters } from "./types";
 
 export const DEFAULT_MIN_RT = 85;
 export const CURATED_MIN = 75;
-/** Metacritic 단독 핵쓰레기 컷 */
+/** Metacritic 단독 Trash Cut 컷 */
 export const TRASH_MC_MAX = 45;
 /** Rotten Tomatoes Rotten 배지 (60% 미만) */
 export const RT_ROTTEN_MAX = 59;
@@ -80,7 +84,7 @@ export function isTrashMovie(movie: CuratedMovie): boolean {
 export function classifyMovie(movie: CuratedMovie): MovieTier {
   const score = resolveCriticScore(movie);
   if (score === null) return "neutral";
-  if (score >= CURATED_MIN) return "curated";
+  if (score >= CURATED_MIN && hasAdequateCriticSample(movie.scores)) return "curated";
   if (isTrashMovie(movie)) return "trash";
   return "neutral";
 }

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { ExternalLink, ShieldCheck } from "lucide-react";
 import type { CuratedMovie } from "@/lib/types";
-import { PLATFORMS } from "@/lib/types";
-import { getTrashReason, isRottenTomatoes, resolveCriticScore } from "@/lib/filters";
+import { CRITIC_SUMMARY_LABEL, CRITIC_SUMMARY_NOTE } from "@/lib/critic";
+import { getTrashReason, resolveCriticScore } from "@/lib/filters";
 
 interface MovieCardProps {
   movie: CuratedMovie;
@@ -11,32 +12,40 @@ interface MovieCardProps {
   hellMode?: boolean;
 }
 
-function ScoreBadge({ label, value, color }: { label: string; value?: number; color: string }) {
+const TRASH_REASON_LABEL = {
+  mc_low: "MC 낮음",
+  rt_rotten: "RT 낮음",
+  mc_rt_combo: "MC·RT 낮음",
+  ldj_low: "LDJ 낮음",
+} as const;
+
+function ScoreBlock({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value?: number;
+  accent: "emerald" | "laser";
+}) {
   if (value === undefined) return null;
+  const color = accent === "laser" ? "text-laser" : "text-emerald";
+
   return (
-    <span
-      className="rounded-md px-2 py-0.5 text-xs font-semibold"
-      style={{ backgroundColor: `${color}20`, color }}
-    >
-      {label} {value}
-    </span>
+    <div className="flex flex-col">
+      <span className={`font-mono text-3xl font-bold leading-none ${color}`}>{value}</span>
+      <span className="font-ui mt-0.5 text-xs font-medium text-panel-muted">{label}</span>
+    </div>
   );
 }
 
-const TRASH_REASON_LABEL = {
-  mc_low: "MC 핵쓰레기",
-  rt_rotten: "RT Rotten",
-  mc_rt_combo: "MC+RT 혹평",
-  ldj_low: "이동진 혹평",
-} as const;
-
 export function MovieCard({ movie, showCritic = false, hellMode = false }: MovieCardProps) {
   const [watchWarn, setWatchWarn] = useState(false);
-  const platformColor = PLATFORMS[movie.platform]?.color ?? "#888";
+  const [slashKey, setSlashKey] = useState(0);
   const criticScore = resolveCriticScore(movie);
-  const hasCriticScore = criticScore !== null;
   const isTrash = hellMode || movie.isTrash;
   const trashReason = isTrash ? getTrashReason(movie) : null;
+  const accent = isTrash ? "laser" : "emerald";
 
   function handleWatchClick(e: React.MouseEvent) {
     if (!isTrash) return;
@@ -46,159 +55,139 @@ export function MovieCard({ movie, showCritic = false, hellMode = false }: Movie
 
   return (
     <article
-      className={`group overflow-hidden rounded-2xl border transition-all ${
+      className={`group relative flex flex-col border bg-surface shadow-sm transition-colors duration-200 ${
         isTrash
-          ? "hell-card border-red-500/40 bg-red-950/25 hover:border-red-400/60 hover:bg-red-950/35"
-          : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/[0.08]"
+          ? "border-laser/25 hover:border-laser/45"
+          : "border-panel-border hover:border-emerald/30"
       }`}
+      onMouseEnter={() => isTrash && setSlashKey((k) => k + 1)}
     >
-      <div className="relative aspect-[2/3] overflow-hidden bg-zinc-900">
+      <div className="relative aspect-[2/3] overflow-hidden bg-surface-raised">
         {movie.posterUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={movie.posterUrl}
             alt={movie.title}
-            className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 ${
-              isTrash ? "saturate-[0.7] contrast-[1.1]" : ""
+            className={`h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.02] ${
+              isTrash ? "saturate-[0.75] contrast-[1.05]" : ""
             }`}
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-zinc-600">
+          <div className="font-ui flex h-full items-center justify-center text-sm text-panel-muted">
             No Poster
           </div>
         )}
-        <div className="absolute left-3 top-3 flex flex-col gap-1">
-          <span
-            className="rounded-full px-2.5 py-1 text-xs font-bold text-white"
-            style={{ backgroundColor: platformColor }}
-          >
-            {movie.platformName}
-          </span>
+
+        <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/40 to-transparent" />
+
+        {isTrash && (
+          <div className="trash-watermark" aria-hidden>
+            <span>CUT</span>
+          </div>
+        )}
+
+        {isTrash && (
+          <div key={slashKey} className="cut-slash opacity-0 transition-opacity group-hover:opacity-100" />
+        )}
+
+        <div className="absolute left-0 top-0 flex flex-col gap-1 p-2">
           {movie.ottVerified && (
-            <span className="rounded-full bg-emerald-500/90 px-2 py-0.5 text-[10px] font-semibold text-white">
-              ✓ OTT 확인
+            <span
+              className={`font-ui inline-flex items-center gap-1 border px-2 py-0.5 text-[11px] font-semibold opacity-0 transition-opacity group-hover:opacity-100 ${
+                isTrash
+                  ? "border-laser/40 bg-surface/95 text-laser"
+                  : "border-emerald/40 bg-surface/95 text-emerald"
+              }`}
+            >
+              <ShieldCheck className="h-3 w-3" />
+              OTT Verified
             </span>
           )}
           {trashReason && (
-            <span className="rounded-full bg-red-600/90 px-2 py-0.5 text-[10px] font-bold text-white">
+            <span className="font-ui border border-laser/35 bg-surface/95 px-2 py-0.5 text-[11px] font-semibold text-laser">
               {TRASH_REASON_LABEL[trashReason]}
             </span>
           )}
         </div>
-        {isTrash && (
-          <div className="absolute inset-0 flex items-center justify-center bg-red-950/50">
-            <span className="trash-stamp rotate-[-12deg] rounded border-2 border-red-400 bg-red-950/90 px-4 py-2 text-lg font-black uppercase tracking-widest text-red-300 shadow-[0_0_20px_rgba(239,68,68,0.6)]">
-              TRASH
-            </span>
-          </div>
+
+        {movie.ottVerified && movie.watchUrl && (
+          <a
+            href={movie.watchUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={handleWatchClick}
+            className={`font-ui absolute bottom-3 left-3 right-3 flex translate-y-2 items-center justify-center gap-2 border py-2.5 text-xs font-semibold opacity-0 transition-all group-hover:translate-y-0 group-hover:opacity-100 ${
+              isTrash
+                ? "border-laser/50 bg-laser/10 text-laser hover:bg-laser/15"
+                : "border-emerald/50 bg-emerald/10 text-emerald hover:bg-emerald/15"
+            }`}
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            {isTrash ? "시청하기" : "Watch Now"}
+          </a>
         )}
       </div>
 
-      <div className="p-4">
-        <h3 className={`text-lg font-semibold ${isTrash ? "text-red-100" : "text-white"}`}>
+      <div className="flex flex-1 flex-col border-t border-panel-border p-4">
+        <h3 className="text-base font-semibold leading-snug text-panel-ink">
           {movie.title}
           {movie.year && (
-            <span className={`ml-2 text-sm font-normal ${isTrash ? "text-red-300/50" : "text-zinc-500"}`}>
-              {movie.year}
-            </span>
+            <span className="ml-1.5 text-sm font-normal text-panel-muted">{movie.year}</span>
           )}
         </h3>
 
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          <ScoreBadge label="MC" value={movie.scores.metacritic} color="#66cc33" />
-          <ScoreBadge label="RT" value={movie.scores.rottenTomatoes} color="#fa320a" />
+        <div className="mt-3 flex flex-wrap items-end gap-4">
+          <ScoreBlock label="Blend" value={criticScore ?? undefined} accent={accent} />
+          <ScoreBlock label="MC" value={movie.scores.metacritic} accent={accent} />
+          <ScoreBlock label="RT" value={movie.scores.rottenTomatoes} accent={accent} />
           {movie.scores.leeDongjin !== undefined && (
-            <span className="rounded-md bg-violet-500/20 px-2 py-0.5 text-xs font-semibold text-violet-300">
-              이동진 {movie.scores.leeDongjin}
-            </span>
-          )}
-          {isRottenTomatoes(movie) && (
-            <span className="rounded-md bg-red-600/30 px-2 py-0.5 text-xs font-bold text-red-300">
-              Rotten
-            </span>
-          )}
-          {hasCriticScore ? (
-            <span
-              className={`rounded-md px-2 py-0.5 text-xs font-semibold ${
-                isTrash ? "bg-red-500/20 text-red-300" : "bg-amber-500/10 text-amber-300"
-              }`}
-            >
-              평론가 {criticScore}
-            </span>
-          ) : (
-            <span className="text-xs text-zinc-600">평론가 점수 없음</span>
+            <ScoreBlock label="LDJ" value={movie.scores.leeDongjin} accent={accent} />
           )}
         </div>
 
-        {movie.genres && movie.genres.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1">
-            {movie.genres.slice(0, 3).map((genre) => (
-              <span
-                key={genre}
-                className={`rounded-full px-2 py-0.5 text-xs ${
-                  isTrash ? "bg-red-900/40 text-red-200/60" : "bg-white/5 text-zinc-400"
-                }`}
-              >
-                {genre}
-              </span>
-            ))}
+        {showCritic && movie.criticLine && (
+          <div className="mt-3">
+            <p
+              className={`font-ui mb-1 text-[11px] font-medium ${
+                isTrash ? "text-laser/85" : "text-panel-muted"
+              }`}
+            >
+              {CRITIC_SUMMARY_LABEL}
+              <span className="ml-1 font-normal text-panel-muted/80">· {CRITIC_SUMMARY_NOTE}</span>
+            </p>
+            <blockquote
+              className={`font-ui border-l-2 pl-3 text-sm leading-relaxed ${
+                isTrash ? "border-laser/45 text-panel-ink/90" : "border-gold/50 text-panel-ink/90"
+              }`}
+            >
+              {movie.criticLine}
+            </blockquote>
           </div>
         )}
 
-        {(movie.overview || movie.description) && (
-          <p className={`mt-3 line-clamp-2 text-sm leading-relaxed ${isTrash ? "text-red-200/50" : "text-zinc-400"}`}>
-            {movie.overview || movie.description}
-          </p>
-        )}
-
-        {showCritic && movie.criticLine && (
-          <blockquote
-            className={`mt-3 border-l-2 pl-3 text-sm italic leading-relaxed ${
-              isTrash ? "border-red-400/60 text-red-200/90" : "border-amber-400/50 text-amber-200/80"
-            }`}
-          >
-            {isTrash ? `💀 ${movie.criticLine}` : movie.criticLine}
-          </blockquote>
-        )}
-
-        {movie.ottVerified && movie.watchUrl && (
-          <>
-            <a
-              href={movie.watchUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={handleWatchClick}
-              className={`mt-4 inline-flex items-center gap-1.5 text-sm font-medium transition-colors ${
-                isTrash
-                  ? "text-red-400 hover:text-red-300"
-                  : "text-amber-400 hover:text-amber-300"
-              }`}
-            >
-              {isTrash ? "⚠️ 그래도 보러 감 (후회 각오)" : `${movie.platformName}에서 시청하기 →`}
-            </a>
-            {watchWarn && (
-              <div className="mt-3 rounded-lg border border-red-500/50 bg-red-950/60 p-3 text-xs text-red-200">
-                <p className="font-bold">돈과 시간을 버리시겠습니까?</p>
-                <div className="mt-2 flex gap-2">
-                  <a
-                    href={movie.watchUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded bg-red-600 px-3 py-1.5 font-bold text-white hover:bg-red-500"
-                  >
-                    각오함
-                  </a>
-                  <button
-                    type="button"
-                    onClick={() => setWatchWarn(false)}
-                    className="rounded border border-white/20 px-3 py-1.5 text-white hover:bg-white/10"
-                  >
-                    안 봄
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
+        {watchWarn && movie.watchUrl && (
+          <div className="mt-3 border border-laser/30 bg-laser/5 p-3">
+            <p className="font-ui text-xs text-panel-muted">
+              Trash Cut에 포함된 작품이에요. 그래도 시청하시겠어요?
+            </p>
+            <div className="mt-2 flex gap-2">
+              <a
+                href={movie.watchUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-ui flex-1 border border-laser bg-laser/15 py-2 text-center text-xs font-semibold text-laser hover:bg-laser/20"
+              >
+                시청하기
+              </a>
+              <button
+                type="button"
+                onClick={() => setWatchWarn(false)}
+                className="font-ui flex-1 border border-panel-border py-2 text-xs text-panel-muted hover:text-panel-ink"
+              >
+                취소
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </article>

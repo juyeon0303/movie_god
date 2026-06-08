@@ -1,23 +1,26 @@
-/** GitHub Actions — 90분 타임아웃 내 완료용 경량 스캔 */
+/** 플랫폼당 목표 명작 수 — 데스크톱 4열 × 3페이지(12편) ≈ 36+, 여유 40 */
+export const CURATED_TARGET_PER_PLATFORM = 40;
+
+/** GitHub Actions — 타임아웃 내 최대한 수집 */
 const CI_SYNC_PIPELINE = {
-  maxVerifiedFetch: 100,
+  maxVerifiedFetch: 220,
   enrichChunk: 20,
-  minCurated: 15,
-  minTrash: 3,
+  targetCurated: CURATED_TARGET_PER_PLATFORM,
+  minTrash: 4,
   omdbConcurrency: 6,
   omdbDelayMs: 80,
-  maxRawScan: 220,
+  maxRawScan: 480,
 };
 
 /** 로컬/Render cron — 풀 스캔 */
 const FULL_SYNC_PIPELINE = {
-  maxVerifiedFetch: 320,
+  maxVerifiedFetch: 520,
   enrichChunk: 24,
-  minCurated: 25,
-  minTrash: 4,
+  targetCurated: CURATED_TARGET_PER_PLATFORM,
+  minTrash: 5,
   omdbConcurrency: 4,
   omdbDelayMs: 200,
-  maxRawScan: 600,
+  maxRawScan: 1000,
 };
 
 /** 일일 배치(sync) 전용 */

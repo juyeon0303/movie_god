@@ -1,34 +1,253 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0a0f;
-  --foreground: #ededed;
+  /* 여백·배경 */
+  --canvas: #e8e8ed;
+  --void: var(--canvas);
+  /* 패널(헤더·카드·한줄평 영역) */
+  --surface: #15151c;
+  --surface-raised: #1c1c26;
+  --ink: #1a1a1f;
+  --silver: #5e5e6b;
+  --border: #d4d4dc;
+  /* 패널 위 글자 */
+  --panel-ink: #f2f2f7;
+  --panel-muted: #b8b8c8;
+  --panel-border: #2c2c38;
+  --emerald: #00a854;
+  --laser: #e6003a;
+  --gold: #c99700;
+  --chalk: var(--ink);
+  --overlay: #000000;
+  --background: var(--canvas);
+  --foreground: var(--ink);
+  --accent: var(--emerald);
+  --accent-dim: color-mix(in srgb, var(--emerald) 10%, transparent);
+  color-scheme: light;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-noto-sans-kr), system-ui, sans-serif;
+  --color-void: var(--void);
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-ink: var(--ink);
+  --color-panel-ink: var(--panel-ink);
+  --color-panel-muted: var(--panel-muted);
+  --color-panel-border: var(--panel-border);
+  --color-emerald: var(--emerald);
+  --color-laser: var(--laser);
+  --color-gold: var(--gold);
+  --color-chalk: var(--chalk);
+  --color-silver: var(--silver);
+  --color-border: var(--border);
+  --color-overlay: var(--overlay);
+  --font-sans: var(--font-noto-sans-kr), "Apple SD Gothic Neo", system-ui, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "Segoe UI Mono", monospace;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--canvas);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.trashcut-theme {
+  --accent: var(--emerald);
+  --accent-dim: color-mix(in srgb, var(--emerald) 10%, transparent);
+}
+
+.trashcut-theme.trash-mode {
+  --accent: var(--laser);
+  --accent-dim: color-mix(in srgb, var(--laser) 10%, transparent);
+}
+
+.font-ui {
+  font-family: var(--font-sans);
+  letter-spacing: 0.01em;
 }
 
 ::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--canvas);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: #c8c8d0;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: #a8a8b0;
+}
+
+@keyframes glitch {
+  0%,
+  100% {
+    transform: translate(0);
+  }
+  20% {
+    transform: translate(-1px, 1px);
+  }
+  40% {
+    transform: translate(1px, -1px);
+  }
+  60% {
+    transform: translate(-1px, -1px);
+  }
+  80% {
+    transform: translate(1px, 1px);
+  }
+}
+
+@keyframes glitch-skew {
+  0%,
+  100% {
+    clip-path: inset(0 0 0 0);
+  }
+  25% {
+    clip-path: inset(20% 0 60% 0);
+  }
+  50% {
+    clip-path: inset(60% 0 10% 0);
+  }
+  75% {
+    clip-path: inset(10% 0 50% 0);
+  }
+}
+
+@keyframes slash-cut {
+  0% {
+    transform: translateX(-120%) skewX(-12deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(120%) skewX(-12deg);
+    opacity: 0;
+  }
+}
+
+@keyframes scanline-drift {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 0 4px;
+  }
+}
+
+.glitch-text {
+  position: relative;
+  animation: glitch 3.5s infinite;
+}
+
+.glitch-text::before,
+.glitch-text::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.glitch-text::before {
+  color: var(--laser);
+  animation: glitch-skew 2s infinite;
+  transform: translate(-1px, 0);
+  opacity: 0.5;
+}
+
+.glitch-text::after {
+  color: #990028;
+  animation: glitch-skew 2.5s infinite reverse;
+  transform: translate(1px, 0);
+  opacity: 0.5;
+}
+
+.cut-slash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 20;
+}
+
+.cut-slash::after {
+  content: "";
+  position: absolute;
+  top: -10%;
+  left: 0;
+  width: 40%;
+  height: 120%;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    color-mix(in srgb, var(--laser) 25%, transparent) 45%,
+    var(--laser) 50%,
+    color-mix(in srgb, var(--laser) 25%, transparent) 55%,
+    transparent 100%
+  );
+  animation: slash-cut 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.trash-scanlines {
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+  animation: scanline-drift 8s linear infinite;
+  opacity: 0.45;
+}
+
+.neon-emerald {
+  color: var(--emerald);
+}
+
+.neon-laser {
+  color: var(--laser);
+}
+
+.neon-gold {
+  color: var(--gold);
+}
+
+.btn-focus-ring:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.trash-watermark {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.trash-watermark span {
+  font-family: var(--font-sans);
+  font-size: clamp(2.5rem, 8vw, 4.5rem);
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: color-mix(in srgb, var(--laser) 22%, transparent);
+  transform: rotate(-24deg) scale(1.1);
+  user-select: none;
+  white-space: nowrap;
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { filterByMood } from "@/lib/filters";
-import { generateAICriticLine } from "@/lib/critic";
-import { readTierSnapshot, SnapshotNotFoundError } from "@/lib/snapshot-read";
+import { generateCriticLine } from "@/lib/critic";
+import { searchMoviesByMood } from "@/lib/mood-rag";
+import { readTieredMovies, SnapshotNotFoundError } from "@/lib/snapshot-read";
 import type { OTTPlatform } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -17,26 +17,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Mood description required" }, { status: 400 });
     }
 
-    const snapshot = await readTierSnapshot(platform);
-    const { movies: matched, fallback } = filterByMood(snapshot.curated, mood, 6);
-
-    const movies = await Promise.all(
-      matched.map(async (m) => ({
-        ...m,
-        criticLine: await generateAICriticLine(m, mood),
-      }))
+    const { curated, fetchedAt } = await readTieredMovies(platform);
+    const { movies: matched, fallback, method, topScore } = await searchMoviesByMood(
+      mood,
+      curated,
+      platform,
+      6
     );
 
-    const interpretation = fallback
-      ? `"${mood}"와 가장 가까운 명작 ${movies.length}편을 추천합니다.`
-      : `"${mood}"에 딱 맞는 ${movies.length}편을 찾았습니다.`;
+    const movies = matched.map((m) => ({
+      ...m,
+      criticLine: generateCriticLine(m, mood),
+    }));
+
+    const interpretation =
+      method === "rag"
+        ? fallback
+          ? `"${mood}"와 비슷한 분위기의 명작 ${movies.length}편 (벡터 유사도 ${(topScore ?? 0).toFixed(2)})`
+          : `"${mood}"에 딱 맞는 명작 ${movies.length}편 — RAG 매칭`
+        : fallback
+          ? `"${mood}"와 가장 가까운 명작 ${movies.length}편 (키워드 폴백)`
+          : `"${mood}"에 맞는 ${movies.length}편을 찾았습니다.`;
 
     return NextResponse.json({
       movies,
       mood,
       interpretation,
       fallback,
-      snapshotAt: snapshot.fetchedAt,
+      method,
+      snapshotAt: fetchedAt,
     });
   } catch (error) {
     if (error instanceof SnapshotNotFoundError) {

@@ -1,4 +1,4 @@
-# Movie God (Curation Only)
+# TrashCut
 
 OTT 영화 네거티브 큐레이션 — 평론가 점수(Metacritic · Rotten Tomatoes)만으로 명작/쓰레기를 분류합니다.
 
@@ -27,7 +27,14 @@ npm run sync:tiers
 ```
 
 - **파일 모드 (기본):** `data/snapshots/{nfx,dnp,wav,tvk}.json`
-- **DB 모드 (선택):** `DATABASE_URL` 설정 시 PostgreSQL upsert + 파일 백업
+- **RAG 임베딩:** `OPENAI_API_KEY` 있으면 `data/embeddings/*.json` 생성
+- **DB 모드 (선택):** `DATABASE_URL` + `USE_PGVECTOR=true` 시 pgvector upsert
+
+## 무드 RAG
+
+`POST /api/mood` — 명작 풀에서 임베딩 코사인 유사도 검색.
+"킹받는데 대리 만족으로 복수하는 명작" 같은 복잡한 무드 지원.
+`OPENAI_API_KEY` 없으면 키워드 폴백.
 
 ## GitHub Actions
 
