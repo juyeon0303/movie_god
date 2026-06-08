@@ -2,9 +2,13 @@ name: Sync OTT Tier Snapshots
 
 on:
   schedule:
-    # 매일 12:00 KST (03:00 UTC)
     - cron: "0 3 * * *"
   workflow_dispatch:
+    inputs:
+      refresh_ldj:
+        description: "Force refresh Lee Dong-jin ratings"
+        required: false
+        default: "false"
 
 permissions:
   contents: write
@@ -16,14 +20,14 @@ env:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           persist-credentials: true
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: "24"
           cache: npm
@@ -39,6 +43,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           USE_PGVECTOR: ${{ secrets.USE_PGVECTOR }}
+          REFRESH_LDJ: ${{ github.event.inputs.refresh_ldj || 'false' }}
 
       - name: Commit snapshots and embeddings to repo
         run: |

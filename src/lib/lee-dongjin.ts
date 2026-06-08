@@ -7,12 +7,12 @@ export const LEE_DONGJIN_WATCHA_USER = "DgwxAeQYNxrMj";
 
 const RATINGS_FILE = path.join(process.cwd(), "data", "lee-dongjin", "ratings.json");
 const WATCHA_API = "https://pedia.watcha.com";
+const CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 export interface LeeDongjinEntry {
   title: string;
   year?: number;
   code: string;
-  /** 0–100 (메타크리틱 호환 스케일) */
   score: number;
   rawRating: number;
 }
@@ -21,7 +21,7 @@ export interface LeeDongjinIndex {
   updatedAt: string;
   count: number;
   byKey: Record<string, number>;
-  entries: LeeDongjinEntry[];
+  entries?: LeeDongjinEntry[];
 }
 
 let memoryIndex: LeeDongjinIndex | null = null;
@@ -36,7 +36,6 @@ const WATCHA_HEADERS = {
   "x-frograms-galaxy-region": "KR",
 };
 
-/** 왓챠 raw(1–10) → 0–100 */
 export function watchaRatingToHundred(raw: number): number {
   return Math.round((raw / 2) * 20);
 }
@@ -51,6 +50,17 @@ export function normalizeTitleKey(title: string): string {
 function makeLookupKey(title: string, year?: number): string {
   const y = year ?? "unknown";
   return `${normalizeTitleKey(title)}|${y}`;
+}
+
+function buildByKey(entries: LeeDongjinEntry[]): Record<string, number> {
+  const byKey: Record<string, number> = {};
+  for (const entry of entries) {
+    const key = makeLookupKey(entry.title, entry.year);
+    if (!(key in byKey)) byKey[key] = entry.score;
+    const titleOnly = makeLookupKey(entry.title);
+    if (!(titleOnly in byKey)) byKey[titleOnly] = entry.score;
+  }
+  return byKey;
 }
 
 interface WatchaRatingItem {
@@ -69,10 +79,12 @@ async function fetchWatchaPage(uri: string): Promise<WatchaPage> {
   const url = uri.startsWith("http") ? uri : `${WATCHA_API}${uri}`;
   let attempts = 0;
 
-  while (attempts < 5) {
+  while (attempts < 6) {
     const res = await fetch(url, { headers: WATCHA_HEADERS });
     if (res.status === 429) {
-      await new Promise((r) => setTimeout(r, 8000));
+      const wait = 5000 + attempts * 3000;
+      console.warn(`[lee-dongjin] 429, wait ${wait}ms`);
+      await new Promise((r) => setTimeout(r, wait));
       attempts++;
       continue;
     }
@@ -82,15 +94,26 @@ async function fetchWatchaPage(uri: string): Promise<WatchaPage> {
   throw new Error(`Watcha API rate limited: ${url}`);
 }
 
-/** 배치 전용 — 이동진 왓챠 전체 평점 수집 */
-export async function fetchAllLeeDongjinRatings(): Promise<LeeDongjinIndex> {
+function isCacheFresh(index: LeeDongjinIndex): boolean {
+  const age = Date.now() - new Date(index.updatedAt).getTime();
+  return age < CACHE_MAX_AGE_MS && index.count > 500;
+}
+
+export async function fetchAllLeeDongjinRatings(options?: {
+  maxPages?: number;
+}): Promise<LeeDongjinIndex> {
+  const maxPages = options?.maxPages ?? Infinity;
   const entries: LeeDongjinEntry[] = [];
   let nextUri: string | null =
     `/api/users/${LEE_DONGJIN_WATCHA_USER}/contents/movies/ratings?order=recent&page=1&size=50`;
+  let pages = 0;
 
-  while (nextUri) {
+  while (nextUri && pages < maxPages) {
+    pages++;
     const page = await fetchWatchaPage(nextUri);
     const batch = page.result?.result ?? [];
+
+    if (batch.length === 0) break;
 
     for (const item of batch) {
       const raw = item.user_content_action?.rating;
@@ -104,29 +127,30 @@ export async function fetchAllLeeDongjinRatings(): Promise<LeeDongjinIndex> {
       });
     }
 
+    if (pages % 10 === 0) {
+      console.log(`[lee-dongjin] page ${pages}, entries ${entries.length}`);
+    }
+
     nextUri = page.result?.next_uri ?? null;
-    if (nextUri) await new Promise((r) => setTimeout(r, 350));
+    if (nextUri) await new Promise((r) => setTimeout(r, 300));
   }
 
-  const byKey: Record<string, number> = {};
-  for (const entry of entries) {
-    const key = makeLookupKey(entry.title, entry.year);
-    if (!(key in byKey)) byKey[key] = entry.score;
-    const titleOnly = makeLookupKey(entry.title);
-    if (!(titleOnly in byKey)) byKey[titleOnly] = entry.score;
-  }
-
+  const byKey = buildByKey(entries);
   return {
     updatedAt: new Date().toISOString(),
     count: entries.length,
     byKey,
-    entries,
   };
 }
 
 export async function saveLeeDongjinIndex(index: LeeDongjinIndex): Promise<void> {
   await fs.mkdir(path.dirname(RATINGS_FILE), { recursive: true });
-  await fs.writeFile(RATINGS_FILE, JSON.stringify(index), "utf-8");
+  const compact = {
+    updatedAt: index.updatedAt,
+    count: index.count,
+    byKey: index.byKey,
+  };
+  await fs.writeFile(RATINGS_FILE, JSON.stringify(compact), "utf-8");
   memoryIndex = index;
 }
 
@@ -138,6 +162,36 @@ export async function loadLeeDongjinIndex(): Promise<LeeDongjinIndex | null> {
     return memoryIndex;
   } catch {
     return null;
+  }
+}
+
+/** CI: 캐시 우선. 로컬: 전체 수집. */
+export async function ensureLeeDongjinIndex(): Promise<LeeDongjinIndex | null> {
+  const cached = await loadLeeDongjinIndex();
+  const forceRefresh = process.env.REFRESH_LDJ === "true";
+
+  if (cached && isCacheFresh(cached) && !forceRefresh) {
+    console.log(`[sync] lee-dongjin: cache hit (${cached.count} ratings)`);
+    return cached;
+  }
+
+  if (process.env.CI === "true" && cached && cached.count > 500 && !forceRefresh) {
+    console.log(`[sync] lee-dongjin: CI using existing cache (${cached.count})`);
+    return cached;
+  }
+
+  const maxPages = process.env.CI === "true" ? 60 : undefined;
+  console.log(
+    `[sync] lee-dongjin: fetching from Watcha${maxPages ? ` (max ${maxPages} pages)` : ""}...`
+  );
+
+  try {
+    const fresh = await fetchAllLeeDongjinRatings({ maxPages });
+    await saveLeeDongjinIndex(fresh);
+    return fresh;
+  } catch (err) {
+    console.warn("[sync] lee-dongjin fetch failed:", err);
+    return cached;
   }
 }
 
