@@ -1,0 +1,97 @@
+import { fetchPlatformMovies } from "./justwatch";
+import { enrichMoviesScores } from "./ratings";
+import { enrichMoviesWithTmdb } from "./tmdb";
+import {
+  applyFilters,
+  classifyMovie,
+  findTierOverlap,
+  hasCriticScore,
+  onlyCriticScored,
+} from "./filters";
+import type { CurationFilters, CuratedMovie, OTTPlatform } from "./types";
+
+/** OTT당 최소 큐레이션 목표 */
+export const MIN_CURATED_PER_PLATFORM = 25;
+/** 쓰레기 컷 섹션 최소 목표 */
+export const MIN_TRASH_PER_PLATFORM = 8;
+/** 평론가 조회를 위해 가져올 검증된 OTT 영화 상한 */
+const MAX_VERIFIED_FETCH = 320;
+const ENRICH_CHUNK = 24;
+
+function countTiers(movies: CuratedMovie[]): { curated: number; trash: number } {
+  let curated = 0;
+  let trash = 0;
+  for (const m of movies) {
+    if (!hasCriticScore(m)) continue;
+    const tier = classifyMovie(m);
+    if (tier === "curated") curated++;
+    else if (tier === "trash") trash++;
+  }
+  return { curated, trash };
+}
+
+function tierTargetsMet(movies: CuratedMovie[]): boolean {
+  const { curated, trash } = countTiers(movies);
+  return curated >= MIN_CURATED_PER_PLATFORM && trash >= MIN_TRASH_PER_PLATFORM;
+}
+
+async function enrichChunk(movies: CuratedMovie[]): Promise<CuratedMovie[]> {
+  const withScores = await enrichMoviesScores(movies);
+  return enrichMoviesWithTmdb(withScores);
+}
+
+/**
+ * JustWatch에서 충분히 스캔한 뒤 평론가 점수를 붙여
+ * OTT당 curated 25+ / trash 8+ 을 채울 때까지 풀을 확장한다.
+ */
+async function fetchEnrichedPool(platform: OTTPlatform): Promise<CuratedMovie[]> {
+  const verified = await fetchPlatformMovies(platform, MAX_VERIFIED_FETCH);
+  const pool: CuratedMovie[] = [];
+
+  for (let i = 0; i < verified.length; i += ENRICH_CHUNK) {
+    const chunk = verified.slice(i, i + ENRICH_CHUNK);
+    const enriched = await enrichChunk(chunk);
+    pool.push(...onlyCriticScored(enriched));
+
+    if (tierTargetsMet(pool)) break;
+  }
+
+  if (process.env.NODE_ENV === "development") {
+    const { curated, trash } = countTiers(pool);
+    console.debug(
+      `[pipeline] ${platform}: verified=${verified.length} scored=${pool.length} curated=${curated} trash=${trash}`
+    );
+  }
+
+  return pool;
+}
+
+export async function fetchCuratedMovies(
+  platform: OTTPlatform,
+  filters: CurationFilters
+): Promise<CuratedMovie[]> {
+  const enriched = await fetchEnrichedPool(platform);
+  return applyFilters(enriched, filters);
+}
+
+/** 큐레이션·쓰레기 동시 조회 + 중복 자동 제거 */
+export async function fetchTieredMovies(
+  platform: OTTPlatform
+): Promise<{ curated: CuratedMovie[]; trash: CuratedMovie[] }> {
+  const enriched = await fetchEnrichedPool(platform);
+  let curated = applyFilters(enriched, { platform, mode: "curated" });
+  let trash = applyFilters(enriched, { platform, mode: "trash" });
+
+  const overlap = findTierOverlap(curated, trash);
+  if (overlap.length > 0) {
+    const overlapIds = new Set(overlap.map((m) => m.id));
+    console.warn(
+      `[pipeline] tier overlap detected (${overlap.length}):`,
+      overlap.map((m) => m.title).join(", ")
+    );
+    trash = trash.filter((m) => !overlapIds.has(m.id));
+    curated = curated.filter((m) => !overlapIds.has(m.id));
+  }
+
+  return { curated, trash };
+}
