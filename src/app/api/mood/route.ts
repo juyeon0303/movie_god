@@ -4,6 +4,9 @@ import { filterByMood } from "@/lib/filters";
 import { generateAICriticLine } from "@/lib/critic";
 import type { OTTPlatform } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();

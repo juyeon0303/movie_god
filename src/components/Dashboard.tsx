@@ -23,19 +23,14 @@ export function Dashboard() {
     setLoading(true);
     setError("");
     try {
-      const [tiersRes, allRes] = await Promise.all([
-        fetch(`/api/tiers?platform=${platform}`),
-        fetch(`/api/movies?platform=${platform}&mode=all`),
-      ]);
-
+      const tiersRes = await fetch(`/api/tiers?platform=${platform}`);
       const tiersData = await tiersRes.json();
-      const allData = await allRes.json();
 
       if (!tiersRes.ok) throw new Error(tiersData.error);
 
       setCuratedMovies(tiersData.curated ?? []);
       setTrashMovies(tiersData.trash ?? []);
-      setAllMovies(allRes.ok ? (allData.movies ?? []) : []);
+      setAllMovies(tiersData.all ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load");
       setCuratedMovies([]);

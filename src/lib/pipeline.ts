@@ -1,3 +1,4 @@
+import { getCached, PLATFORM_POOL_TTL_MS, setCache } from "./cache";
 import { fetchPlatformMovies } from "./justwatch";
 import { enrichMoviesScores } from "./ratings";
 import { enrichMoviesWithTmdb } from "./tmdb";
@@ -45,6 +46,10 @@ async function enrichChunk(movies: CuratedMovie[]): Promise<CuratedMovie[]> {
  * OTT당 curated 25+ / trash 8+ 을 채울 때까지 풀을 확장한다.
  */
 async function fetchEnrichedPool(platform: OTTPlatform): Promise<CuratedMovie[]> {
+  const cacheKey = `pool:${platform}`;
+  const cached = getCached<CuratedMovie[]>(cacheKey);
+  if (cached) return cached;
+
   const verified = await fetchPlatformMovies(platform, MAX_VERIFIED_FETCH);
   const pool: CuratedMovie[] = [];
 
@@ -63,6 +68,7 @@ async function fetchEnrichedPool(platform: OTTPlatform): Promise<CuratedMovie[]>
     );
   }
 
+  setCache(cacheKey, pool, PLATFORM_POOL_TTL_MS);
   return pool;
 }
 
@@ -74,13 +80,14 @@ export async function fetchCuratedMovies(
   return applyFilters(enriched, filters);
 }
 
-/** 큐레이션·쓰레기 동시 조회 + 중복 자동 제거 */
+/** 큐레이션·쓰레기·전체 동시 조회 + 중복 자동 제거 */
 export async function fetchTieredMovies(
   platform: OTTPlatform
-): Promise<{ curated: CuratedMovie[]; trash: CuratedMovie[] }> {
+): Promise<{ curated: CuratedMovie[]; trash: CuratedMovie[]; all: CuratedMovie[] }> {
   const enriched = await fetchEnrichedPool(platform);
   let curated = applyFilters(enriched, { platform, mode: "curated" });
   let trash = applyFilters(enriched, { platform, mode: "trash" });
+  const all = applyFilters(enriched, { platform, mode: "all" });
 
   const overlap = findTierOverlap(curated, trash);
   if (overlap.length > 0) {
@@ -93,5 +100,5 @@ export async function fetchTieredMovies(
     curated = curated.filter((m) => !overlapIds.has(m.id));
   }
 
-  return { curated, trash };
+  return { curated, trash, all };
 }

@@ -1,36 +1,36 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Movie God (Curation Only)
 
-## Getting Started
+OTT 영화 네거티브 큐레이션 — 평론가 점수(Metacritic · Rotten Tomatoes)만으로 명작과 쓰레기를 걸러냅니다.
 
-First, run the development server:
+## 로컬 실행
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+http://localhost:3002
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Render 배포 (GitHub 연동)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. [Render](https://render.com) → **New +** → **Blueprint**
+2. `juyeon0303/movie_god` 저장소 연결
+3. `render.yaml`이 자동으로 Web Service 생성
+4. (선택) Environment에 API 키 추가:
+   - `OMDB_API_KEY` — 없으면 demo key 사용
+   - `TMDB_API_KEY` — 한글 메타데이터 보강
+   - `OPENAI_API_KEY` — 무드 검색 AI 한줄평
 
-## Learn More
+또는 **New Web Service**로 수동 생성:
 
-To learn more about Next.js, take a look at the following resources:
+| 항목 | 값 |
+|------|-----|
+| Build Command | `npm install && npm run build` |
+| Start Command | `npm start` |
+| Health Check | `/api/health` |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Render가 `PORT` 환경변수를 주입하면 Next.js가 자동으로 해당 포트에서 서비스합니다.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 지원 OTT
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Netflix · Disney+ · Wavve · TVING

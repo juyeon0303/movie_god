@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchCuratedMovies } from "@/lib/pipeline";
 import { generateCriticLine, generateTrashCriticLine } from "@/lib/critic";
+import { jsonCached } from "@/lib/http";
 import type { CurationFilters, OTTPlatform } from "@/lib/types";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 const VALID_PLATFORMS: OTTPlatform[] = ["nfx", "dnp", "wav", "tvk"];
 
@@ -29,7 +33,7 @@ export async function GET(request: NextRequest) {
       return m;
     });
 
-    return NextResponse.json({
+    return jsonCached({
       movies,
       total: movies.length,
       platform,
