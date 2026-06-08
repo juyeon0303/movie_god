@@ -5,14 +5,10 @@ services:
     plan: free
     repo: https://github.com/juyeon0303/movie_god
     branch: master
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
-      - key: NODE_ENV
-        value: production
-      - key: NODE_VERSION
-        value: 20.18.0
       - key: OMDB_API_KEY
         sync: false
       - key: TMDB_API_KEY
