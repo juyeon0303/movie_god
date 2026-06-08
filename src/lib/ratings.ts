@@ -102,7 +102,8 @@ export async function enrichMovieScores(movie: CuratedMovie): Promise<CuratedMov
 
 export async function enrichMoviesScores(
   movies: CuratedMovie[],
-  concurrency = 3
+  concurrency = 3,
+  delayMs = 250
 ): Promise<CuratedMovie[]> {
   const enriched: CuratedMovie[] = [];
 
@@ -110,8 +111,8 @@ export async function enrichMoviesScores(
     const batch = movies.slice(i, i + concurrency);
     const results = await Promise.all(batch.map(enrichMovieScores));
     enriched.push(...results);
-    if (i + concurrency < movies.length) {
-      await new Promise((r) => setTimeout(r, 250));
+    if (i + concurrency < movies.length && delayMs > 0) {
+      await new Promise((r) => setTimeout(r, delayMs));
     }
   }
 

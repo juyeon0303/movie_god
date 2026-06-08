@@ -2,6 +2,7 @@ import { getCached, PLATFORM_POOL_TTL_MS, setCache } from "./cache";
 import { fetchPlatformMovies } from "./justwatch";
 import { enrichMoviesScores } from "./ratings";
 import { enrichMoviesWithTmdb } from "./tmdb";
+import { PIPELINE } from "./pipeline-config";
 import {
   applyFilters,
   classifyMovie,
@@ -11,13 +12,8 @@ import {
 } from "./filters";
 import type { CurationFilters, CuratedMovie, OTTPlatform } from "./types";
 
-/** OTT당 최소 큐레이션 목표 */
-export const MIN_CURATED_PER_PLATFORM = 25;
-/** 쓰레기 컷 섹션 최소 목표 */
-export const MIN_TRASH_PER_PLATFORM = 8;
-/** 평론가 조회를 위해 가져올 검증된 OTT 영화 상한 */
-const MAX_VERIFIED_FETCH = 320;
-const ENRICH_CHUNK = 24;
+export const MIN_CURATED_PER_PLATFORM = PIPELINE.minCurated;
+export const MIN_TRASH_PER_PLATFORM = PIPELINE.minTrash;
 
 function countTiers(movies: CuratedMovie[]): { curated: number; trash: number } {
   let curated = 0;
@@ -33,11 +29,15 @@ function countTiers(movies: CuratedMovie[]): { curated: number; trash: number } 
 
 function tierTargetsMet(movies: CuratedMovie[]): boolean {
   const { curated, trash } = countTiers(movies);
-  return curated >= MIN_CURATED_PER_PLATFORM && trash >= MIN_TRASH_PER_PLATFORM;
+  return curated >= PIPELINE.minCurated && trash >= PIPELINE.minTrash;
 }
 
 async function enrichChunk(movies: CuratedMovie[]): Promise<CuratedMovie[]> {
-  const withScores = await enrichMoviesScores(movies);
+  const withScores = await enrichMoviesScores(
+    movies,
+    PIPELINE.omdbConcurrency,
+    PIPELINE.omdbDelayMs
+  );
   return enrichMoviesWithTmdb(withScores);
 }
 
@@ -50,11 +50,15 @@ async function fetchEnrichedPool(platform: OTTPlatform): Promise<CuratedMovie[]>
   const cached = getCached<CuratedMovie[]>(cacheKey);
   if (cached) return cached;
 
-  const verified = await fetchPlatformMovies(platform, MAX_VERIFIED_FETCH);
+  const verified = await fetchPlatformMovies(
+    platform,
+    PIPELINE.maxVerifiedFetch,
+    PIPELINE.maxRawScan
+  );
   const pool: CuratedMovie[] = [];
 
-  for (let i = 0; i < verified.length; i += ENRICH_CHUNK) {
-    const chunk = verified.slice(i, i + ENRICH_CHUNK);
+  for (let i = 0; i < verified.length; i += PIPELINE.enrichChunk) {
+    const chunk = verified.slice(i, i + PIPELINE.enrichChunk);
     const enriched = await enrichChunk(chunk);
     pool.push(...onlyCriticScored(enriched));
 

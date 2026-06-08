@@ -5,8 +5,7 @@ import { validateOttOffer } from "./ott-verify";
 
 const JUSTWATCH_GRAPHQL = "https://apis.justwatch.com/graphql";
 
-/** 검증 통과 목표를 채우기 위해 스캔하는 최대 raw 수 */
-const MAX_RAW_SCAN = 600;
+const DEFAULT_MAX_RAW_SCAN = 600;
 
 const POPULAR_TITLES_QUERY = `
 query GetPopularTitles(
@@ -173,7 +172,8 @@ function nodeToMovie(node: JustWatchNode, platform: OTTPlatform): CuratedMovie |
 
 export async function fetchPlatformMovies(
   platform: OTTPlatform,
-  limit = 40
+  limit = 40,
+  maxRawScan = DEFAULT_MAX_RAW_SCAN
 ): Promise<CuratedMovie[]> {
   const movies: CuratedMovie[] = [];
   let cursor: string | null = null;
@@ -181,7 +181,7 @@ export async function fetchPlatformMovies(
   let rawScanned = 0;
   let skipped = 0;
 
-  while (hasMore && movies.length < limit && rawScanned < MAX_RAW_SCAN) {
+  while (hasMore && movies.length < limit && rawScanned < maxRawScan) {
     const batchSize = Math.min(20, limit - movies.length + 10);
 
     const json = await graphqlRequest("GetPopularTitles", {

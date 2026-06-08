@@ -17,13 +17,25 @@ export function Dashboard() {
   const [trashMovies, setTrashMovies] = useState<CuratedMovie[]>([]);
   const [allMovies, setAllMovies] = useState<CuratedMovie[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingHint, setLoadingHint] = useState("영화 목록 불러오는 중...");
   const [error, setError] = useState("");
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError("");
+    setLoadingHint("OTT 목록 확인 중...");
+
+    const hintTimer = window.setTimeout(() => {
+      setLoadingHint("평론가 점수 조회 중... 첫 로딩은 30~60초 걸릴 수 있어요.");
+    }, 8000);
+
+    const controller = new AbortController();
+    const timeoutTimer = window.setTimeout(() => controller.abort(), 120000);
+
     try {
-      const tiersRes = await fetch(`/api/tiers?platform=${platform}`);
+      const tiersRes = await fetch(`/api/tiers?platform=${platform}`, {
+        signal: controller.signal,
+      });
       const tiersData = await tiersRes.json();
 
       if (!tiersRes.ok) throw new Error(tiersData.error);
@@ -32,11 +44,19 @@ export function Dashboard() {
       setTrashMovies(tiersData.trash ?? []);
       setAllMovies(tiersData.all ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load");
+      const message =
+        err instanceof Error && err.name === "AbortError"
+          ? "로딩 시간이 초과됐어요. 잠시 후 다시 시도해 주세요."
+          : err instanceof Error
+            ? err.message
+            : "Failed to load";
+      setError(message);
       setCuratedMovies([]);
       setTrashMovies([]);
       setAllMovies([]);
     } finally {
+      window.clearTimeout(hintTimer);
+      window.clearTimeout(timeoutTimer);
       setLoading(false);
     }
   }, [platform]);
@@ -108,8 +128,19 @@ export function Dashboard() {
 
           {error && (
             <div className="rounded-xl border border-red-500/30 bg-red-950/30 p-4 text-red-300">
-              {error}
+              <p>{error}</p>
+              <button
+                type="button"
+                onClick={fetchData}
+                className="mt-3 rounded-lg bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/20"
+              >
+                다시 시도
+              </button>
             </div>
+          )}
+
+          {loading && (
+            <p className="mb-4 text-center text-sm text-zinc-400">{loadingHint}</p>
           )}
 
           {loading && (
