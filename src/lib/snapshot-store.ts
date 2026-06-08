@@ -28,23 +28,26 @@ async function getPgPool() {
 }
 
 export async function initSnapshotStore(): Promise<void> {
-  if (!useDatabase()) {
-    await ensureSnapshotDir();
-    return;
-  }
+  await ensureSnapshotDir();
 
-  const pool = await getPgPool();
+  if (!useDatabase()) return;
+
   try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS tier_snapshots (
-        platform VARCHAR(8) PRIMARY KEY,
-        payload JSONB NOT NULL,
-        fetched_at TIMESTAMPTZ NOT NULL,
-        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      )
-    `);
-  } finally {
-    await pool.end();
+    const pool = await getPgPool();
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS tier_snapshots (
+          platform VARCHAR(8) PRIMARY KEY,
+          payload JSONB NOT NULL,
+          fetched_at TIMESTAMPTZ NOT NULL,
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `);
+    } finally {
+      await pool.end();
+    }
+  } catch (err) {
+    console.warn("[snapshot] PostgreSQL init skipped, using files only:", err);
   }
 }
 
@@ -58,20 +61,24 @@ export async function saveTierSnapshot(snapshot: TierSnapshot): Promise<void> {
 
   if (!useDatabase()) return;
 
-  const pool = await getPgPool();
   try {
-    await pool.query(
-      `INSERT INTO tier_snapshots (platform, payload, fetched_at, updated_at)
-       VALUES ($1, $2::jsonb, $3::timestamptz, NOW())
-       ON CONFLICT (platform)
-       DO UPDATE SET
-         payload = EXCLUDED.payload,
-         fetched_at = EXCLUDED.fetched_at,
-         updated_at = NOW()`,
-      [snapshot.platform, JSON.stringify(snapshot), snapshot.fetchedAt]
-    );
-  } finally {
-    await pool.end();
+    const pool = await getPgPool();
+    try {
+      await pool.query(
+        `INSERT INTO tier_snapshots (platform, payload, fetched_at, updated_at)
+         VALUES ($1, $2::jsonb, $3::timestamptz, NOW())
+         ON CONFLICT (platform)
+         DO UPDATE SET
+           payload = EXCLUDED.payload,
+           fetched_at = EXCLUDED.fetched_at,
+           updated_at = NOW()`,
+        [snapshot.platform, JSON.stringify(snapshot), snapshot.fetchedAt]
+      );
+    } finally {
+      await pool.end();
+    }
+  } catch (err) {
+    console.warn(`[snapshot] DB upsert skipped for ${snapshot.platform}:`, err);
   }
 }
 
