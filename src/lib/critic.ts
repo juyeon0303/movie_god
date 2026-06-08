@@ -1,5 +1,5 @@
 import type { CuratedMovie } from "./types";
-import { resolveCriticScore } from "./filters";
+import { getTrashReason, resolveCriticScore } from "./filters";
 
 function scoreToStars(score: number): string {
   const stars = Math.min(5, Math.max(1, Math.round(score / 20)));
@@ -24,6 +24,7 @@ function moodHint(mood?: string): string | undefined {
   if (/웃|코미/.test(mood)) return "기분 전환용";
   if (/공포/.test(mood)) return "불 끄고";
   if (/감동|위로/.test(mood)) return "마음 비울 때";
+  if (/킹받|복수|대리/.test(mood)) return "복수 대리만족용";
   return undefined;
 }
 
@@ -41,7 +42,7 @@ function curatedLines(movie: CuratedMovie, score: number, mood?: string): string
 
   const mid = [
     `${g}기대 너무 크게 잡지 말고 보면 괜찮음.`,
-    `완벽하진 않은데, 시간은 안 아까움.`,
+    `완벽하진 않은데, 시간은 안 아깝음.`,
     hint ? `${hint} 보면 분위기는 살아남.` : `평점보다 실제 체감이 조금 더 나음.`,
     `명작이라 부르긴 어렵지만, 충분히 볼 만함.`,
   ];
@@ -52,14 +53,36 @@ function curatedLines(movie: CuratedMovie, score: number, mood?: string): string
 }
 
 function trashLines(movie: CuratedMovie, score: number): string[] {
-  return [
-    `솔직히 이건 패스. ${score}점이 현실적으로 말해 줌.`,
-    `인기는 있는데 작품성은… 음, 다음 거 고르세요.`,
-    `트레일러가 제일 재밌었을 가능성 높음.`,
-    `보고 나서 "왜 봤지" 할 확률 큼. 차라리 다른 거.`,
-    `랭킹에 올라와서 눌렀다가 후회하는 타입.`,
-    `평론가들이 이미 답 내놨음. ${score}점.`,
+  const reason = getTrashReason(movie);
+  const genre = primaryGenre(movie);
+
+  const base = [
+    `솔직히 이건 패스. ${score}점이 이미 답임.`,
+    `랭킹에 올라와서 눌렀다가 후회하는 전형적인 놈.`,
+    `트레일러가 하이라이트였을 확률 99%.`,
+    `보고 나면 "아 왜 봤지" — 이 대사만 남음.`,
+    `2시간이 아깝다는 말, 여기서 처음 이해함.`,
+    `평론가들이 먼저 손 흔듦. ${score}점.`,
+    genre ? `${genre} 팬이라도 이번만은 패스.` : `인기만 있고 작품성은 글쎄.`,
+    `OTT 알고리즘이 당신을 속이려 합니다. 속지 마세요.`,
+    `친구한테 추천하면 절교각.`,
+    `돈 내고 본 게 아니어도 시간은 돈입니다.`,
   ];
+
+  if (reason === "rt_rotten") {
+    base.unshift(`RT Rotten 인증. 대중도 평론가도 등을 돌림.`);
+  }
+  if (reason === "mc_low") {
+    base.unshift(`Metacritic ${score}점. 핵쓰레기 존 확정.`);
+  }
+  if (reason === "mc_rt_combo") {
+    base.unshift(`MC·RT 동시 혹평. 이건 진짜 지옥행.`);
+  }
+  if (reason === "ldj_low") {
+    base.unshift(`이동진 ${score}점. 이 분이 싫어하면 진짜 싫은 거.`);
+  }
+
+  return base;
 }
 
 function formatLine(text: string, score: number): string {
@@ -112,7 +135,7 @@ export async function generateAICriticLine(
             role: "user",
             content: `영화: ${movie.title} (${movie.year ?? ""})
 장르: ${movie.genres?.join(", ") ?? "미상"}
-줄거리: ${(movie.overview ?? movie.description ?? "").slice(0, 120)}
+줄거리: ${((movie.overview || movie.description) ?? "").slice(0, 120)}
 평론가 점수: ${score}
 ${mood ? `지금 기분/상황: ${mood}` : ""}
 별점 형식: ${stars}`,

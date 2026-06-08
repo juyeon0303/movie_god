@@ -14,9 +14,11 @@ export const PLATFORMS: Record<OTTPlatform, PlatformInfo> = {
 };
 
 export interface MovieScores {
-  /** 평론가 점수만 — 판정·정렬·한줄평 전부 이것만 사용 */
+  /** 평론가 점수 — 이동진(35%)·MC(40%)·RT(25%) 블렌드 */
   metacritic?: number;
   rottenTomatoes?: number;
+  /** 이동진 평론가 (왓챠피디아, 0–100) */
+  leeDongjin?: number;
 }
 
 export interface CuratedMovie {

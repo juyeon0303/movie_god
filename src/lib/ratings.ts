@@ -1,4 +1,11 @@
+import { lookupLeeDongjin, type LeeDongjinIndex } from "./lee-dongjin";
 import type { CuratedMovie, MovieScores } from "./types";
+
+let ldjIndex: LeeDongjinIndex | null = null;
+
+export function setLeeDongjinIndex(index: LeeDongjinIndex | null): void {
+  ldjIndex = index;
+}
 
 const scoreCache = new Map<string, MovieScores & { fetchedAt: number }>();
 const CACHE_TTL = 24 * 60 * 60 * 1000;
@@ -88,11 +95,13 @@ export async function enrichMovieScores(movie: CuratedMovie): Promise<CuratedMov
   }
 
   const criticScores = await fetchCriticScores(movie);
+  const leeDongjin = lookupLeeDongjin(movie, ldjIndex);
 
   const enrichedScores: MovieScores = {
     ...movie.scores,
     metacritic: criticScores.metacritic ?? movie.scores.metacritic,
     rottenTomatoes: criticScores.rottenTomatoes ?? movie.scores.rottenTomatoes,
+    leeDongjin: leeDongjin ?? movie.scores.leeDongjin,
   };
 
   scoreCache.set(cacheKey, { ...enrichedScores, fetchedAt: Date.now() });

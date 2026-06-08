@@ -1,5 +1,11 @@
 import { embedMovies, embeddingsEnabled, movieDocument } from "../src/lib/embeddings";
+import {
+  fetchAllLeeDongjinRatings,
+  loadLeeDongjinIndex,
+  saveLeeDongjinIndex,
+} from "../src/lib/lee-dongjin";
 import { buildTierSnapshot } from "../src/lib/pipeline-build";
+import { setLeeDongjinIndex } from "../src/lib/ratings";
 import { initSnapshotStore, saveTierSnapshot } from "../src/lib/snapshot-store";
 import { ALL_PLATFORMS } from "../src/lib/snapshot-types";
 import { initVectorStore, savePlatformEmbeddings } from "../src/lib/vector-store";
@@ -12,6 +18,21 @@ async function main() {
 
   await initSnapshotStore();
   await initVectorStore();
+
+  try {
+    console.log("[sync] fetching Lee Dong-jin ratings from Watcha Pedia...");
+    const ldjIndex = await fetchAllLeeDongjinRatings();
+    await saveLeeDongjinIndex(ldjIndex);
+    setLeeDongjinIndex(ldjIndex);
+    console.log(`[sync] lee-dongjin: ${ldjIndex.count} ratings loaded`);
+  } catch (ldjErr) {
+    console.warn("[sync] lee-dongjin fetch failed:", ldjErr);
+    const cached = await loadLeeDongjinIndex();
+    setLeeDongjinIndex(cached);
+    if (cached) {
+      console.log(`[sync] lee-dongjin: using cached ${cached.count} ratings`);
+    }
+  }
 
   for (const platform of ALL_PLATFORMS) {
     try {

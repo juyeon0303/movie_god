@@ -44,7 +44,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/snapshots/ data/embeddings/
+          git add data/snapshots/ data/embeddings/ data/lee-dongjin/
           if git diff --staged --quiet; then
             echo "No snapshot changes to commit"
           else
