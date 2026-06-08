@@ -239,7 +239,7 @@ export function Dashboard() {
 
         <footer className="mt-20 border-t border-border py-8 text-center">
           <p className="flex justify-center">
-            <BrandLogo size="sm" className="text-ink" />
+            <BrandLogo size="sm" className="text-panel-ink" />
           </p>
           <p className="font-ui mt-2 text-xs text-silver sm:text-sm">
             LDJ 35% · MC 40% · RT 25% — audience scores excluded

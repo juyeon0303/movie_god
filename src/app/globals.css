@@ -1,29 +1,26 @@
 @import "tailwindcss";
 
 :root {
-  /* 여백·배경 */
-  --canvas: #e8e8ed;
+  --canvas: #0b0b0f;
   --void: var(--canvas);
-  /* 패널(헤더·카드·한줄평 영역) */
   --surface: #15151c;
   --surface-raised: #1c1c26;
-  --ink: #1a1a1f;
-  --silver: #5e5e6b;
-  --border: #d4d4dc;
-  /* 패널 위 글자 */
-  --panel-ink: #f2f2f7;
-  --panel-muted: #b8b8c8;
-  --panel-border: #2c2c38;
-  --emerald: #00a854;
-  --laser: #e6003a;
-  --gold: #c99700;
+  --ink: #f2f2f7;
+  --silver: #b8b8c8;
+  --border: #2c2c38;
+  --panel-ink: var(--ink);
+  --panel-muted: var(--silver);
+  --panel-border: var(--border);
+  --emerald: #2dd68a;
+  --laser: #ff3d6a;
+  --gold: #f0c030;
   --chalk: var(--ink);
   --overlay: #000000;
   --background: var(--canvas);
   --foreground: var(--ink);
   --accent: var(--emerald);
-  --accent-dim: color-mix(in srgb, var(--emerald) 10%, transparent);
-  color-scheme: light;
+  --accent-dim: color-mix(in srgb, var(--emerald) 12%, transparent);
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -80,12 +77,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c8c8d0;
+  background: #3a3a48;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a8a8b0;
+  background: #4e4e5c;
 }
 
 @keyframes glitch {
@@ -194,9 +191,9 @@ body {
   background: linear-gradient(
     105deg,
     transparent 0%,
-    color-mix(in srgb, var(--laser) 25%, transparent) 45%,
+    color-mix(in srgb, var(--laser) 30%, transparent) 45%,
     var(--laser) 50%,
-    color-mix(in srgb, var(--laser) 25%, transparent) 55%,
+    color-mix(in srgb, var(--laser) 30%, transparent) 55%,
     transparent 100%
   );
   animation: slash-cut 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
@@ -207,11 +204,11 @@ body {
     0deg,
     transparent,
     transparent 2px,
-    rgba(0, 0, 0, 0.03) 2px,
-    rgba(0, 0, 0, 0.03) 4px
+    rgba(255, 255, 255, 0.025) 2px,
+    rgba(255, 255, 255, 0.025) 4px
   );
   animation: scanline-drift 8s linear infinite;
-  opacity: 0.45;
+  opacity: 0.5;
 }
 
 .neon-emerald {
@@ -246,7 +243,7 @@ body {
   font-size: clamp(2.5rem, 8vw, 4.5rem);
   font-weight: 800;
   letter-spacing: 0.2em;
-  color: color-mix(in srgb, var(--laser) 22%, transparent);
+  color: color-mix(in srgb, var(--laser) 28%, transparent);
   transform: rotate(-24deg) scale(1.1);
   user-select: none;
   white-space: nowrap;
