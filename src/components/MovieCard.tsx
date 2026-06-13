@@ -116,14 +116,14 @@ export function MovieCard({ movie, showCritic = false, hellMode = false }: Movie
             target="_blank"
             rel="noopener noreferrer"
             onClick={handleWatchClick}
-            className={`font-ui absolute bottom-3 left-3 right-3 flex translate-y-2 items-center justify-center gap-2 border py-2.5 text-xs font-semibold opacity-0 transition-all group-hover:translate-y-0 group-hover:opacity-100 ${
+            className={`font-ui absolute bottom-3 left-3 right-3 hidden items-center justify-center gap-2 border py-2.5 text-xs font-semibold sm:flex sm:translate-y-2 sm:opacity-0 sm:transition-all sm:group-hover:translate-y-0 sm:group-hover:opacity-100 ${
               isTrash
                 ? "border-laser/50 bg-laser/10 text-laser hover:bg-laser/15"
                 : "border-emerald/50 bg-emerald/10 text-emerald hover:bg-emerald/15"
             }`}
           >
             <ExternalLink className="h-3.5 w-3.5" />
-            {isTrash ? "시청하기" : "Watch Now"}
+            {isTrash ? "시청하기" : "OTT에서 보기"}
           </a>
         )}
       </div>
@@ -163,6 +163,23 @@ export function MovieCard({ movie, showCritic = false, hellMode = false }: Movie
               {movie.criticLine}
             </blockquote>
           </div>
+        )}
+
+        {movie.ottVerified && movie.watchUrl && !watchWarn && (
+          <a
+            href={movie.watchUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={handleWatchClick}
+            className={`font-ui mt-3 flex items-center justify-center gap-2 border py-2.5 text-xs font-semibold transition-colors ${
+              isTrash
+                ? "border-laser/50 bg-laser/10 text-laser hover:bg-laser/15"
+                : "border-emerald/50 bg-emerald/10 text-emerald hover:bg-emerald/15"
+            }`}
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            {isTrash ? "시청하기" : "OTT에서 보기"}
+          </a>
         )}
 
         {watchWarn && movie.watchUrl && (

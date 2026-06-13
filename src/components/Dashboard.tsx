@@ -39,17 +39,15 @@ export function Dashboard() {
 
       if (!tiersRes.ok) {
         if (tiersData.syncRequired) {
-          throw new Error(
-            "데이터 없음. GitHub Actions sync-tiers를 실행하거나 git pull 하세요."
-          );
+          throw new Error("아직 데이터를 불러올 수 없어요. 잠시 후 다시 시도해 주세요.");
         }
-        throw new Error(tiersData.error);
+        throw new Error(tiersData.error ?? "목록을 불러오지 못했어요.");
       }
 
       setCuratedMovies(tiersData.curated ?? []);
       setTrashMovies(tiersData.trash ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load");
+      setError(err instanceof Error ? err.message : "목록을 불러오지 못했어요.");
       setCuratedMovies([]);
       setTrashMovies([]);
     } finally {
@@ -186,7 +184,7 @@ export function Dashboard() {
                 className="font-ui mt-3 inline-flex items-center gap-2 border border-panel-border bg-surface px-4 py-2 text-xs text-panel-ink hover:border-gold/40"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
-                Retry
+                다시 시도
               </button>
             </div>
           )}

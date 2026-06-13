@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Command, Loader2, Sparkles } from "lucide-react";
 import type { CuratedMovie, OTTPlatform } from "@/lib/types";
 import { MovieCard } from "./MovieCard";
@@ -26,6 +26,15 @@ export function MoodSearch({ platform }: MoodSearchProps) {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [focused, setFocused] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    setResults([]);
+    setInterpretation("");
+    setMethod(null);
+    setSearched(false);
+    setError("");
+  }, [platform]);
 
   async function handleSearch(searchMood?: string) {
     const query = searchMood ?? mood;
@@ -33,6 +42,7 @@ export function MoodSearch({ platform }: MoodSearchProps) {
 
     setLoading(true);
     setSearched(true);
+    setError("");
 
     try {
       const res = await fetch("/api/mood", {
@@ -42,13 +52,26 @@ export function MoodSearch({ platform }: MoodSearchProps) {
       });
 
       const data = await res.json();
-      if (res.ok) {
-        setResults(data.movies);
-        setInterpretation(data.interpretation ?? "");
-        setMethod(data.method ?? null);
+
+      if (!res.ok) {
+        if (data.syncRequired) {
+          setError("이 OTT 데이터가 아직 준비되지 않았어요. 잠시 후 다시 시도해 주세요.");
+        } else {
+          setError(data.error ?? "무드 검색에 실패했어요.");
+        }
+        setResults([]);
+        setInterpretation("");
+        setMethod(null);
+        return;
       }
+
+      setResults(data.movies ?? []);
+      setInterpretation(data.interpretation ?? "");
+      setMethod(data.method ?? null);
     } catch {
+      setError("네트워크 오류예요. 서버가 깨어나는 중일 수 있어요.");
       setResults([]);
+      setInterpretation("");
       setMethod(null);
     } finally {
       setLoading(false);
@@ -67,7 +90,7 @@ export function MoodSearch({ platform }: MoodSearchProps) {
           <h2 className="font-ui text-sm font-semibold text-gold">Mood Command</h2>
         </div>
         <p className="font-ui mt-1 text-sm text-panel-muted">
-          감정·상황을 입력 — RAG 임베딩 또는 키워드로 명작 매칭
+          감정·상황을 입력 — Approved 목록에서 무드에 맞는 작품을 찾아요
         </p>
       </div>
 
@@ -94,7 +117,7 @@ export function MoodSearch({ platform }: MoodSearchProps) {
             disabled={loading}
             className="btn-focus-ring font-ui shrink-0 border-2 border-gold/50 bg-gold/12 px-5 py-2 text-xs font-bold text-gold transition hover:bg-gold/20 disabled:opacity-40"
           >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Run"}
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "검색"}
           </button>
         </div>
 
@@ -114,15 +137,19 @@ export function MoodSearch({ platform }: MoodSearchProps) {
           ))}
         </div>
 
-        {interpretation && (
+        {error && (
+          <p className="font-ui mt-4 text-sm text-laser">{error}</p>
+        )}
+
+        {interpretation && !error && (
           <p className="font-ui mt-4 text-sm text-gold">
             {interpretation}
             {method === "rag" && (
-              <span className="ml-2 border border-gold/30 px-1.5 py-0.5 text-[11px]">RAG</span>
+              <span className="ml-2 border border-gold/30 px-1.5 py-0.5 text-[11px]">임베딩</span>
             )}
             {method === "keyword" && (
               <span className="ml-2 border border-panel-border px-1.5 py-0.5 text-[11px] text-panel-muted">
-                Keyword
+                키워드
               </span>
             )}
           </p>
@@ -130,9 +157,9 @@ export function MoodSearch({ platform }: MoodSearchProps) {
 
         <WakeUpWait active={loading} variant="inline" accent="gold" />
 
-        {!loading && searched && results.length === 0 && (
+        {!loading && searched && !error && results.length === 0 && (
           <p className="font-ui mt-6 text-center text-sm text-panel-muted">
-            매칭 실패. sync-tiers 임베딩 또는 다른 무드를 시도하세요.
+            매칭된 작품이 없어요. 다른 무드로 다시 검색해 보세요.
           </p>
         )}
 

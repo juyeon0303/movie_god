@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { Scissors } from "lucide-react";
 import { BrandLogo } from "./BrandLogo";
 
@@ -10,6 +11,22 @@ interface TrashGateModalProps {
 }
 
 export function TrashGateModal({ open, onConfirm, onCancel }: TrashGateModalProps) {
+  useEffect(() => {
+    if (!open) return;
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") onCancel();
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = "";
+    };
+  }, [open, onCancel]);
+
   if (!open) return null;
 
   return (
@@ -17,11 +34,12 @@ export function TrashGateModal({ open, onConfirm, onCancel }: TrashGateModalProp
       <div className="absolute inset-0 bg-overlay/70 backdrop-blur-sm" onClick={onCancel} aria-hidden />
       <div
         role="dialog"
+        aria-modal="true"
         aria-labelledby="trash-gate-title"
         className="relative w-full max-w-md border-2 border-laser bg-surface p-8 shadow-xl"
       >
         <div className="mb-4 flex flex-col items-center gap-3">
-          <BrandLogo size="md" />
+          <BrandLogo size="md" className="text-panel-ink" />
           <Scissors className="h-8 w-8 text-laser" strokeWidth={2} />
         </div>
         <h2

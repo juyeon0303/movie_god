@@ -86,15 +86,19 @@ export async function loadTierSnapshot(
   platform: OTTPlatform
 ): Promise<TierSnapshot | null> {
   if (useDatabase()) {
-    const pool = await getPgPool();
     try {
-      const result = await pool.query<{ payload: TierSnapshot }>(
-        `SELECT payload FROM tier_snapshots WHERE platform = $1`,
-        [platform]
-      );
-      if (result.rows[0]?.payload) return result.rows[0].payload;
-    } finally {
-      await pool.end();
+      const pool = await getPgPool();
+      try {
+        const result = await pool.query<{ payload: TierSnapshot }>(
+          `SELECT payload FROM tier_snapshots WHERE platform = $1`,
+          [platform]
+        );
+        if (result.rows[0]?.payload) return result.rows[0].payload;
+      } finally {
+        await pool.end();
+      }
+    } catch (err) {
+      console.warn(`[snapshot] DB read failed for ${platform}, falling back to file:`, err);
     }
   }
 
