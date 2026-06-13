@@ -5,46 +5,46 @@ export interface WakeMessage {
 
 export const WAKE_MESSAGES: WakeMessage[] = [
   {
-    headline: "서버 깨우는 중.",
-    sub: "Render free tier tax. 첫 클릭이 제일 느림.",
+    headline: "서버를 시작하는 중이에요.",
+    sub: "무료 호스팅은 잠시 쉬었다가 첫 요청에 다시 켜져요.",
   },
   {
-    headline: "첫 로딩 30초 각.",
-    sub: "한번 살아나면 그다음부턴 빠름.",
+    headline: "첫 로딩은 조금 걸릴 수 있어요.",
+    sub: "한 번 연결되면 다음부터는 더 빨라져요.",
   },
   {
-    headline: "목록 싸는 중.",
-    sub: "Approved / Trash Cut 동시 로딩.",
+    headline: "목록을 불러오는 중이에요.",
+    sub: "Approved와 Trash Cut 데이터를 준비하고 있어요.",
   },
   {
-    headline: "커피 한 모금.",
-    sub: "이동진 · MC · RT만 봄. 관객 평점은 패스.",
+    headline: "잠시만 기다려 주세요.",
+    sub: "이동진 · MC · RT 점수만 사용해요.",
   },
   {
-    headline: "거의 됐음.",
-    sub: "진짜로. 조금만.",
+    headline: "거의 다 됐어요.",
+    sub: "조금만 더 기다려 주세요.",
   },
   {
-    headline: "스핀업 중.",
-    sub: "무료 호스팅 클래식.",
+    headline: "연결 중…",
+    sub: "서버가 깨어나는 중일 수 있어요.",
   },
   {
-    headline: "75 미만은 Approved 없음.",
-    sub: "RT 100% 단독? 표본 부족이라 컷.",
+    headline: "Approved는 블렌드 75점 이상.",
+    sub: "Metacritic 또는 두 개 이상의 평론 소스가 필요해요.",
   },
   {
-    headline: "Trash Cut = 숫자 필터.",
-    sub: "재미없다고 안 함. 점수만 말함.",
+    headline: "Trash Cut은 점수 기준 분류예요.",
+    sub: "목록에 올랐다고 작품을 평가하지는 않아요.",
   },
 ];
 
 export const WAKE_TIPS: string[] = [
-  "블렌드: LDJ 35 · MC 40 · RT 25",
-  "MC 45↓ / RT 59↓ → Trash Cut 후보",
-  "OTT 탭 바꾸면 목록도 갈림",
-  "무드 검색 = 키워드 (vec 있으면 더 정확)",
-  "데이터는 GHA cron이 갱신",
-  "Verified = JustWatch 링크 실제 확인됨",
+  "블렌드: 이동진 35% · MC 40% · RT 25%",
+  "MC 45 이하, RT 59% 이하 → Trash Cut 후보",
+  "OTT를 바꾸면 목록도 함께 바뀌어요",
+  "무드 검색은 키워드로 매칭해요",
+  "데이터는 주기적으로 갱신돼요",
+  "OTT 확인됨 = JustWatch에서 시청 링크를 확인했어요",
 ];
 
 export function pickWakeMessage(elapsedMs: number, tick: number): WakeMessage {

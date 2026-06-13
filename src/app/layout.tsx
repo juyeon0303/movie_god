@@ -10,7 +10,7 @@ const notoSansKr = Noto_Sans_KR({
 
 export const metadata: Metadata = {
   title: "TrashCut",
-  description: "OTT 영화 큐레이션. 이동진 · MC · RT만. 75+ Approved, 나머지 Trash Cut.",
+  description: "OTT 영화 큐레이션. 이동진·MC·RT 평론 점수로 Approved와 Trash Cut을 구분해요.",
 };
 
 export default function RootLayout({

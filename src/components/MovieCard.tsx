@@ -13,10 +13,10 @@ interface MovieCardProps {
 }
 
 const TRASH_REASON_LABEL = {
-  mc_low: "MC↓",
-  rt_rotten: "RT↓",
-  mc_rt_combo: "MC·RT↓",
-  ldj_low: "LDJ↓",
+  mc_low: "MC 낮음",
+  rt_rotten: "RT 낮음",
+  mc_rt_combo: "MC·RT 낮음",
+  ldj_low: "이동진 낮음",
 } as const;
 
 function ScoreBlock({
@@ -123,7 +123,7 @@ export function MovieCard({ movie, showCritic = false, hellMode = false }: Movie
             }`}
           >
             <ExternalLink className="h-3.5 w-3.5" />
-            {isTrash ? "그래도 볼래" : "보러 가기"}
+            {isTrash ? "OTT에서 보기" : "시청하기"}
           </a>
         )}
       </div>
@@ -178,14 +178,14 @@ export function MovieCard({ movie, showCritic = false, hellMode = false }: Movie
             }`}
           >
             <ExternalLink className="h-3.5 w-3.5" />
-            {isTrash ? "그래도 볼래" : "보러 가기"}
+            {isTrash ? "OTT에서 보기" : "시청하기"}
           </a>
         )}
 
         {watchWarn && movie.watchUrl && (
           <div className="mt-3 border border-laser/30 bg-laser/5 p-3">
             <p className="font-ui text-xs text-panel-muted">
-              Trash Cut 목록임. 그래도 감?
+              Trash Cut에 포함된 작품이에요. 그래도 시청하시겠어요?
             </p>
             <div className="mt-2 flex gap-2">
               <a
@@ -194,7 +194,7 @@ export function MovieCard({ movie, showCritic = false, hellMode = false }: Movie
                 rel="noopener noreferrer"
                 className="font-ui flex-1 border border-laser bg-laser/15 py-2 text-center text-xs font-semibold text-laser hover:bg-laser/20"
               >
-                그래도 볼래
+                시청하기
               </a>
               <button
                 type="button"

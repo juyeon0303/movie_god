@@ -134,7 +134,7 @@ export function WakeUpWait({
           <div className="flex items-center gap-2">
             <Moon className={`h-5 w-5 ${accentText}`} strokeWidth={2} />
             <span className={`font-ui text-xs font-semibold uppercase tracking-widest ${accentText}`}>
-              cold start
+              서버 준비 중
             </span>
           </div>
           <div className="flex items-center gap-1.5 text-panel-muted">
@@ -164,7 +164,7 @@ export function WakeUpWait({
 
         <div className="mt-6">
           <div className="mb-2 flex items-center justify-between">
-            <span className="font-ui text-[11px] text-panel-muted">스핀업</span>
+            <span className="font-ui text-[11px] text-panel-muted">로딩 중</span>
             <span className={`font-mono text-[11px] font-medium ${accentText}`}>
               {Math.round(progress)}%
             </span>
@@ -192,7 +192,7 @@ export function WakeUpWait({
         </AnimatePresence>
 
         <p className="font-ui mt-4 text-center text-[11px] text-panel-muted/80">
-          Render free · 두 번째부터 빠름
+          첫 접속은 조금 걸릴 수 있어요
         </p>
       </div>
     </div>

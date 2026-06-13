@@ -39,9 +39,9 @@ export function Dashboard() {
 
       if (!tiersRes.ok) {
         if (tiersData.syncRequired) {
-          throw new Error("데이터 아직 없음. 잠깐 뒤 다시.");
+          throw new Error("데이터를 불러올 수 없어요. 잠시 후 다시 시도해 주세요.");
         }
-        throw new Error(tiersData.error ?? "목록 로드 실패.");
+        throw new Error(tiersData.error ?? "목록을 불러오지 못했어요.");
       }
 
       setCuratedMovies(tiersData.curated ?? []);
@@ -153,7 +153,7 @@ export function Dashboard() {
               Trash <span className="text-laser">Cut</span>
             </h2>
             <p className="font-ui mt-2 text-sm leading-relaxed text-panel-muted">
-              점수 밀린 애들. 본 건 본인 책임.
+              평론 점수 기준으로 분류된 작품이에요. 시청 여부는 본인 판단에 맡겨요.
             </p>
           </motion.section>
         )}
@@ -197,7 +197,9 @@ export function Dashboard() {
 
           {!loading && !error && movies.length === 0 && (
             <p className="font-ui py-20 text-center text-sm text-silver">
-              {isTrash ? "Trash Cut 0편. 이 OTT는 클린." : "Approved 0편. 데이터 확인 필요."}
+              {isTrash
+                ? "Trash Cut 작품이 없어요."
+                : "Approved 작품이 없어요. 데이터를 확인해 주세요."}
             </p>
           )}
 
@@ -240,7 +242,7 @@ export function Dashboard() {
             <BrandLogo size="sm" className="text-panel-ink" />
           </p>
           <p className="font-ui mt-2 text-xs text-silver sm:text-sm">
-            관객 평점은 안 봄 · LDJ 35 · MC 40 · RT 25
+            관객 평점은 사용하지 않아요 · 이동진 35% · MC 40% · RT 25%
           </p>
         </footer>
       </main>
