@@ -107,7 +107,7 @@ export function MoviePagination({ total, page, onChange, mode }: MoviePagination
       </button>
 
       <span className="font-ui w-full text-center text-xs text-silver sm:w-auto sm:ml-2">
-        {total}편 · {page}/{totalPages}페이지
+        {total}편 · {page}/{totalPages}
       </span>
     </nav>
   );

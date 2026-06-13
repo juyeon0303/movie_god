@@ -39,15 +39,15 @@ export function Dashboard() {
 
       if (!tiersRes.ok) {
         if (tiersData.syncRequired) {
-          throw new Error("아직 데이터를 불러올 수 없어요. 잠시 후 다시 시도해 주세요.");
+          throw new Error("데이터 아직 없음. 잠깐 뒤 다시.");
         }
-        throw new Error(tiersData.error ?? "목록을 불러오지 못했어요.");
+        throw new Error(tiersData.error ?? "목록 로드 실패.");
       }
 
       setCuratedMovies(tiersData.curated ?? []);
       setTrashMovies(tiersData.trash ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "목록을 불러오지 못했어요.");
+      setError(err instanceof Error ? err.message : "목록 로드 실패.");
       setCuratedMovies([]);
       setTrashMovies([]);
     } finally {
@@ -122,7 +122,7 @@ export function Dashboard() {
               <span style={{ color: PLATFORMS[platform].color }}>{PLATFORMS[platform].name}</span>
               <span className="text-silver"> · </span>
               <span className={isTrash ? "text-laser" : "text-gold"}>
-                {isTrash ? "Trash" : "Approved"} {movies.length}
+              {isTrash ? "Trash Cut" : "Approved"} · {movies.length}편
               </span>
             </p>
           )}
@@ -150,10 +150,10 @@ export function Dashboard() {
             className="mb-8 border border-laser/25 bg-surface p-5 shadow-sm"
           >
             <h2 className="font-ui text-sm font-semibold text-laser sm:text-base">
-              Trash <span className="text-laser">Cut</span> 목록
+              Trash <span className="text-laser">Cut</span>
             </h2>
             <p className="font-ui mt-2 text-sm leading-relaxed text-panel-muted">
-              평론 점수 기준으로 분류된 작품이에요. 시청 전 한 번 더 확인해 주세요.
+              점수 밀린 애들. 본 건 본인 책임.
             </p>
           </motion.section>
         )}
@@ -167,10 +167,10 @@ export function Dashboard() {
             >
               {isTrash ? (
                 <>
-                  Trash <span className="neon-laser">Cut</span> 목록
+                  Trash <span className="neon-laser">Cut</span>
                 </>
               ) : (
-                "Approved 목록"
+                "Approved"
               )}
             </h2>
           </div>
@@ -197,7 +197,7 @@ export function Dashboard() {
 
           {!loading && !error && movies.length === 0 && (
             <p className="font-ui py-20 text-center text-sm text-silver">
-              {isTrash ? "이 OTT에 Trash Cut 작품이 없어요." : "Approved 목록이 비어 있어요."}
+              {isTrash ? "Trash Cut 0편. 이 OTT는 클린." : "Approved 0편. 데이터 확인 필요."}
             </p>
           )}
 
@@ -240,7 +240,7 @@ export function Dashboard() {
             <BrandLogo size="sm" className="text-panel-ink" />
           </p>
           <p className="font-ui mt-2 text-xs text-silver sm:text-sm">
-            LDJ 35% · MC 40% · RT 25% — audience scores excluded
+            관객 평점은 안 봄 · LDJ 35 · MC 40 · RT 25
           </p>
         </footer>
       </main>

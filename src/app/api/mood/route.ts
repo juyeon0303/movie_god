@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     const platform = (body.platform ?? "nfx") as OTTPlatform;
 
     if (!mood || mood.length < 2) {
-      return NextResponse.json({ error: "Mood description required" }, { status: 400 });
+      return NextResponse.json({ error: "무드 2글자 이상." }, { status: 400 });
     }
 
     const { curated, fetchedAt } = await readTieredMovies(platform);
@@ -33,11 +33,11 @@ export async function POST(request: NextRequest) {
     const interpretation =
       method === "rag"
         ? fallback
-          ? `"${mood}"와 비슷한 분위기의 명작 ${movies.length}편 (벡터 유사도 ${(topScore ?? 0).toFixed(2)})`
-          : `"${mood}"에 딱 맞는 명작 ${movies.length}편 — RAG 매칭`
+          ? `「${mood}」 비슷한 vibe ${movies.length}편 · sim ${(topScore ?? 0).toFixed(2)}`
+          : `「${mood}」 vec 매칭 ${movies.length}편`
         : fallback
-          ? `"${mood}"와 가장 가까운 명작 ${movies.length}편 (키워드 폴백)`
-          : `"${mood}"에 맞는 ${movies.length}편을 찾았습니다.`;
+          ? `「${mood}」 키워드 폴백 ${movies.length}편`
+          : `「${mood}」 → ${movies.length}편 뽑음`;
 
     return NextResponse.json({
       movies,
@@ -50,13 +50,13 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof SnapshotNotFoundError) {
       return NextResponse.json(
-        { error: "스냅샷이 아직 없습니다.", syncRequired: true },
+        { error: "스냅샷 없음. sync 돌리거나 기다려.", syncRequired: true },
         { status: 503 }
       );
     }
     console.error("Mood API error:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Mood search failed" },
+      { error: error instanceof Error ? error.message : "무드 검색 터짐" },
       { status: 500 }
     );
   }

@@ -43,8 +43,8 @@ export function ModeToggle({ mode, onChange }: ModeToggleProps) {
         }`}
       >
         <Sparkles className={`h-4 w-4 shrink-0 ${!isTrash ? "text-gold" : ""}`} strokeWidth={2} />
-        <span className="hidden sm:inline">Approved Masterpieces</span>
-        <span className="sm:hidden">Approved</span>
+        <span className="hidden sm:inline">Approved</span>
+        <span className="sm:hidden">Pass</span>
       </button>
 
       <button

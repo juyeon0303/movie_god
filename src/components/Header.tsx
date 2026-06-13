@@ -25,7 +25,7 @@ export function Header({ mode = "curated" }: HeaderProps) {
             }`}
           >
             {isTrash ? (
-              "평론 점수 하위 구간"
+              "하위 점수대"
             ) : (
               <>
                 <span className="text-laser font-semibold">Cut</span> The Trash
@@ -42,15 +42,15 @@ export function Header({ mode = "curated" }: HeaderProps) {
         >
           {isTrash ? (
             <>
-              <span className="font-medium text-panel-muted">평론 점수 기준</span>
+              <span className="font-medium text-panel-muted">숫자로 걸러진 구간</span>
               <br />
-              <span className="font-semibold text-laser">Trash Cut 목록</span>
+              <span className="font-semibold text-laser">Trash Cut</span>
             </>
           ) : (
             <>
-              <span className="font-medium text-gold">이동진 · MC · RT</span>
+              <span className="font-medium text-gold">LDJ · MC · RT</span>
               <br />
-              <span className="font-semibold text-gold">블렌드 75+ 명작만</span>
+              <span className="font-semibold text-gold">75+만 통과</span>
             </>
           )}
         </p>

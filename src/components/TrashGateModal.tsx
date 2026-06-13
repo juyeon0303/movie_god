@@ -46,12 +46,12 @@ export function TrashGateModal({ open, onConfirm, onCancel }: TrashGateModalProp
           id="trash-gate-title"
           className="font-ui text-center text-xl font-semibold text-panel-ink sm:text-2xl"
         >
-          Trash <span className="text-laser">Cut</span> 목록으로 이동할까요?
+          Trash <span className="text-laser">Cut</span> 들어감?
         </h2>
         <p className="font-ui mt-4 text-center text-sm leading-relaxed text-panel-muted">
-          평론 점수(이동진 · MC · RT) 기준으로 낮게 분류된 작품 목록이에요.
+          LDJ · MC · RT 합쳐서 하위로 밀린 목록.
           <br />
-          목록에 올라왔다고 작품의 가치를 단정하지는 않아요. 참고용으로 봐 주세요.
+          작품 깎아내리는 거 아님. 숫자만.
         </p>
         <div className="mt-8 grid grid-cols-2 gap-3">
           <button
@@ -59,14 +59,14 @@ export function TrashGateModal({ open, onConfirm, onCancel }: TrashGateModalProp
             onClick={onCancel}
             className="btn-focus-ring font-ui border border-panel-border py-3 text-xs font-semibold text-panel-ink hover:border-gold/45 hover:text-gold"
           >
-            Approved로 돌아가기
+            안 감
           </button>
           <button
             type="button"
             onClick={onConfirm}
             className="btn-focus-ring font-ui border-2 border-laser bg-laser/12 py-3 text-xs font-bold text-laser hover:bg-laser/18"
           >
-            Trash <span className="text-laser">Cut</span> 보기
+            들어가기
           </button>
         </div>
       </div>

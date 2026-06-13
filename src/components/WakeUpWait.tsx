@@ -80,7 +80,7 @@ export function WakeUpWait({
         }
       >
         <Loader2 className={`h-5 w-5 animate-spin ${accentText}`} />
-        <span className="font-ui text-sm text-silver">불러오는 중…</span>
+        <span className="font-ui text-sm text-silver">로딩…</span>
       </div>
     );
   }
@@ -117,7 +117,7 @@ export function WakeUpWait({
               />
             </div>
             <p className="font-ui mt-2 text-[11px] text-panel-muted/90">
-              {seconds >= 20 ? `${seconds}초째 대기 중 · ` : ""}
+              {seconds >= 20 ? `${seconds}s 대기 · ` : ""}
               {tip}
             </p>
           </div>
@@ -134,7 +134,7 @@ export function WakeUpWait({
           <div className="flex items-center gap-2">
             <Moon className={`h-5 w-5 ${accentText}`} strokeWidth={2} />
             <span className={`font-ui text-xs font-semibold uppercase tracking-widest ${accentText}`}>
-              Wake Up
+              cold start
             </span>
           </div>
           <div className="flex items-center gap-1.5 text-panel-muted">
@@ -164,7 +164,7 @@ export function WakeUpWait({
 
         <div className="mt-6">
           <div className="mb-2 flex items-center justify-between">
-            <span className="font-ui text-[11px] text-panel-muted">서버 기동 중</span>
+            <span className="font-ui text-[11px] text-panel-muted">스핀업</span>
             <span className={`font-mono text-[11px] font-medium ${accentText}`}>
               {Math.round(progress)}%
             </span>
@@ -192,7 +192,7 @@ export function WakeUpWait({
         </AnimatePresence>
 
         <p className="font-ui mt-4 text-center text-[11px] text-panel-muted/80">
-          Render 무료 플랜 · 첫 방문 후에는 빨라져요
+          Render free · 두 번째부터 빠름
         </p>
       </div>
     </div>
