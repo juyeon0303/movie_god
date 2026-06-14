@@ -42,7 +42,7 @@ export const WAKE_TIPS: string[] = [
   "블렌드: 이동진 35% · MC 40% · RT 25%",
   "MC 45 이하, RT 59% 이하 → Trash Cut 후보",
   "OTT를 바꾸면 목록도 함께 바뀌어요",
-  "무드 검색은 키워드로 매칭해요",
+  "Approved와 Trash Cut 탭으로 목록을 전환할 수 있어요",
   "데이터는 주기적으로 갱신돼요",
   "OTT 확인됨 = JustWatch에서 시청 링크를 확인했어요",
 ];

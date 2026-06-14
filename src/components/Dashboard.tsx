@@ -8,7 +8,6 @@ import { Header } from "./Header";
 import { PlatformFilter } from "./PlatformFilter";
 import { MovieCard } from "./MovieCard";
 import { TrashWarning } from "./TrashWarning";
-import { MoodSearch } from "./MoodSearch";
 import { TrashGateModal } from "./TrashGateModal";
 import { ModeToggle, type ViewMode } from "./ModeToggle";
 import { getMoviePageSize, MoviePagination } from "./MoviePagination";
@@ -129,18 +128,13 @@ export function Dashboard() {
         </section>
 
         {!isTrash && (
-          <>
-            <section className="mb-8">
-              <MoodSearch platform={platform} />
-            </section>
-            <section className="mb-8">
-              <TrashWarning
-                movies={trashMovies}
-                loading={loading}
-                onEnterHell={() => setShowTrashGate(true)}
-              />
-            </section>
-          </>
+          <section className="mb-8">
+            <TrashWarning
+              movies={trashMovies}
+              loading={loading}
+              onEnterHell={() => setShowTrashGate(true)}
+            />
+          </section>
         )}
 
         {isTrash && !loading && (

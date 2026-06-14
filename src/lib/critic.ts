@@ -1,11 +1,9 @@
 import {
   CURATED_MIN,
   getTrashReason,
-  matchMood,
   resolveCriticScore,
   RT_ROTTEN_MAX,
   TRASH_MC_MAX,
-  TRASH_MC_RT_COMBO_MAX,
 } from "./filters";
 import { hasAdequateCriticSample, SCORE_WEIGHTS } from "./score-blend";
 import type { CuratedMovie, MovieScores } from "./types";
@@ -28,14 +26,7 @@ function approvedSampleNote(scores: MovieScores): string {
   return "소스 2개 이상";
 }
 
-function moodAddendum(mood: string, movie: CuratedMovie): string | null {
-  if (matchMood(mood, movie) <= 0) return null;
-  const genre = movie.genres?.[0];
-  if (genre) return `「${mood}」 무드와 ${genre} 장르가 맞아요.`;
-  return `「${mood}」 무드와 맞는 작품이에요.`;
-}
-
-function buildCuratedLine(movie: CuratedMovie, mood?: string): string {
+function buildCuratedLine(movie: CuratedMovie): string {
   const blend = resolveCriticScore(movie) ?? 0;
   const sources = formatSourceScores(movie.scores);
   const sample = approvedSampleNote(movie.scores);
@@ -43,9 +34,6 @@ function buildCuratedLine(movie: CuratedMovie, mood?: string): string {
   let line = `블렌드 ${blend}점`;
   if (sources) line += ` (${sources})`;
   line += `. ${CURATED_MIN}점 이상·${sample} 기준으로 Approved에 포함돼요.`;
-
-  const moodNote = mood ? moodAddendum(mood, movie) : null;
-  if (moodNote) line += ` ${moodNote}`;
 
   return line;
 }
@@ -78,7 +66,7 @@ export function generateTrashCriticLine(movie: CuratedMovie): string {
   return buildTrashLine(movie);
 }
 
-export function generateCriticLine(movie: CuratedMovie, mood?: string): string {
+export function generateCriticLine(movie: CuratedMovie): string {
   if (!hasAdequateCriticSample(movie.scores)) {
     const blend = resolveCriticScore(movie);
     const sources = formatSourceScores(movie.scores);
@@ -86,9 +74,5 @@ export function generateCriticLine(movie: CuratedMovie, mood?: string): string {
       return `블렌드 ${blend}점 (${sources}). 평론 소스가 부족해 Approved에는 포함되지 않아요.`;
     }
   }
-  return buildCuratedLine(movie, mood);
-}
-
-export function generateAICriticLine(movie: CuratedMovie, mood?: string): string {
-  return generateCriticLine(movie, mood);
+  return buildCuratedLine(movie);
 }

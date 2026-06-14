@@ -58,14 +58,3 @@ export interface MoviesResponse {
   fetchedAt: string;
   cacheHit?: boolean;
 }
-
-export interface MoodSearchRequest {
-  mood: string;
-  platform?: OTTPlatform;
-}
-
-export interface MoodSearchResponse {
-  movies: CuratedMovie[];
-  mood: string;
-  interpretation?: string;
-}
