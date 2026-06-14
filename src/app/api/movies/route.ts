@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateCriticLine, generateTrashCriticLine } from "@/lib/critic";
 import { jsonCached } from "@/lib/http";
 import { readFilteredMovies, SnapshotNotFoundError } from "@/lib/snapshot-read";
 import type { CurationFilters, OTTPlatform } from "@/lib/types";
@@ -13,7 +12,6 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const platform = (searchParams.get("platform") ?? "nfx") as OTTPlatform;
   const mode = (searchParams.get("mode") ?? "curated") as CurationFilters["mode"];
-  const withCritic = searchParams.get("critic") === "true";
 
   if (!VALID_PLATFORMS.includes(platform)) {
     return NextResponse.json({ error: "Invalid platform" }, { status: 400 });
@@ -22,19 +20,9 @@ export async function GET(request: NextRequest) {
   try {
     const { movies, fetchedAt } = await readFilteredMovies(platform, { platform, mode });
 
-    const enriched = movies.map((m) => {
-      if (mode === "trash") {
-        return { ...m, criticLine: generateTrashCriticLine(m) };
-      }
-      if (withCritic) {
-        return { ...m, criticLine: generateCriticLine(m) };
-      }
-      return m;
-    });
-
     return jsonCached({
-      movies: enriched,
-      total: enriched.length,
+      movies,
+      total: movies.length,
       platform,
       tmdbEnriched: !!process.env.TMDB_API_KEY,
       fetchedAt,

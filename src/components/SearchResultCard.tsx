@@ -18,7 +18,7 @@ interface SearchResultCardProps {
 
 export function SearchResultCard({ hit }: SearchResultCardProps) {
   const [watchWarn, setWatchWarn] = useState(false);
-  const { movie, tier, criticLine, matchReason } = hit;
+  const { movie, tier, matchReason } = hit;
   const tierLabel = TIER_LABEL[tier];
   const isTrash = tier === "trash";
   const blend = resolveCriticScore(movie);
@@ -87,12 +87,6 @@ export function SearchResultCard({ hit }: SearchResultCardProps) {
               <span>이동진 {movie.scores.leeDongjin}</span>
             )}
           </div>
-
-          {criticLine && (
-            <p className="font-ui mt-2 line-clamp-2 text-xs leading-relaxed text-panel-ink/85 sm:line-clamp-3 sm:text-sm">
-              {criticLine}
-            </p>
-          )}
 
           {movie.ottVerified && movie.watchUrl && !watchWarn && (
             <a

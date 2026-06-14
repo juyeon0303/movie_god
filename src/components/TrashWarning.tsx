@@ -49,7 +49,7 @@ export function TrashWarning({ movies, loading, onEnterHell }: TrashWarningProps
 
       <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 md:grid-cols-4 sm:p-5">
         {movies.slice(0, 4).map((movie) => (
-          <MovieCard key={movie.id} movie={{ ...movie, isTrash: true }} showCritic hellMode />
+          <MovieCard key={movie.id} movie={{ ...movie, isTrash: true }} hellMode />
         ))}
       </div>
     </section>

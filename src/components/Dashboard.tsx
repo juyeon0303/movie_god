@@ -219,7 +219,7 @@ export function Dashboard() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: Math.min(i * 0.03, 0.3) }}
                   >
-                    <MovieCard movie={movie} showCritic hellMode={isTrash} />
+                    <MovieCard movie={movie} hellMode={isTrash} />
                   </motion.div>
                 ))}
               </motion.div>

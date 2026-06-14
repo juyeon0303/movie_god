@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateCriticLine, generateTrashCriticLine } from "@/lib/critic";
 import { jsonCached } from "@/lib/http";
 import { readTieredMovies, SnapshotNotFoundError } from "@/lib/snapshot-read";
 import type { OTTPlatform } from "@/lib/types";
@@ -21,8 +20,8 @@ export async function GET(request: NextRequest) {
       await readTieredMovies(platform);
 
     return jsonCached({
-      curated: curated.map((m) => ({ ...m, criticLine: generateCriticLine(m) })),
-      trash: trash.map((m) => ({ ...m, criticLine: generateTrashCriticLine(m) })),
+      curated,
+      trash,
       all,
       platform,
       ottVerified,

@@ -3,12 +3,10 @@
 import { useState } from "react";
 import { ExternalLink, ShieldCheck } from "lucide-react";
 import type { CuratedMovie } from "@/lib/types";
-import { CRITIC_SUMMARY_LABEL, CRITIC_SUMMARY_NOTE } from "@/lib/critic";
 import { getTrashReason, resolveCriticScore } from "@/lib/filters";
 
 interface MovieCardProps {
   movie: CuratedMovie;
-  showCritic?: boolean;
   hellMode?: boolean;
 }
 
@@ -39,7 +37,7 @@ function ScoreBlock({
   );
 }
 
-export function MovieCard({ movie, showCritic = false, hellMode = false }: MovieCardProps) {
+export function MovieCard({ movie, hellMode = false }: MovieCardProps) {
   const [watchWarn, setWatchWarn] = useState(false);
   const [slashKey, setSlashKey] = useState(0);
   const criticScore = resolveCriticScore(movie);
@@ -144,26 +142,6 @@ export function MovieCard({ movie, showCritic = false, hellMode = false }: Movie
             <ScoreBlock label="LDJ" value={movie.scores.leeDongjin} accent={accent} />
           )}
         </div>
-
-        {showCritic && movie.criticLine && (
-          <div className="mt-3">
-            <p
-              className={`font-ui mb-1 text-[11px] font-medium ${
-                isTrash ? "text-laser/85" : "text-panel-muted"
-              }`}
-            >
-              {CRITIC_SUMMARY_LABEL}
-              <span className="ml-1 font-normal text-panel-muted/80">· {CRITIC_SUMMARY_NOTE}</span>
-            </p>
-            <blockquote
-              className={`font-ui border-l-2 pl-3 text-sm leading-relaxed ${
-                isTrash ? "border-laser/45 text-panel-ink/90" : "border-gold/50 text-panel-ink/90"
-              }`}
-            >
-              {movie.criticLine}
-            </blockquote>
-          </div>
-        )}
 
         {movie.ottVerified && movie.watchUrl && !watchWarn && (
           <a

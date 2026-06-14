@@ -1,5 +1,4 @@
 import { classifyMovie, type MovieTier } from "./filters";
-import { generateCriticLine, generateTrashCriticLine } from "./critic";
 import {
   getSearchIndexEntry,
   lookupDirectorImdbIds,
@@ -12,7 +11,6 @@ export interface MovieSearchHit {
   movie: CuratedMovie;
   tier: MovieTier;
   platform: OTTPlatform;
-  criticLine: string;
   matchScore: number;
   matchReason?: string;
 }
@@ -159,11 +157,6 @@ function matchScore(query: string, movie: CuratedMovie): number {
   return score;
 }
 
-function criticLineForTier(movie: CuratedMovie, tier: MovieTier): string {
-  if (tier === "trash") return generateTrashCriticLine(movie);
-  return generateCriticLine(movie);
-}
-
 export function searchMoviesInPool(
   query: string,
   movies: CuratedMovie[],
@@ -192,7 +185,6 @@ export function searchMoviesInPool(
       tier: row.tier,
       platform: row.platform,
       matchScore: row.matchScore,
-      criticLine: criticLineForTier(row.movie, row.tier),
       matchReason: matchReasonForScore(row.matchScore, row.movie, normalizedQuery),
     }));
 
