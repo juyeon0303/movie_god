@@ -1,5 +1,9 @@
 import { classifyMovie, type MovieTier } from "./filters";
 import { generateCriticLine, generateTrashCriticLine } from "./critic";
+import {
+  getSearchIndexEntry,
+  lookupDirectorImdbIds,
+} from "./search-index";
 import { ALL_PLATFORMS } from "./snapshot-types";
 import { readTieredMovies, SnapshotNotFoundError } from "./snapshot-read";
 import type { CuratedMovie, OTTPlatform } from "./types";
@@ -10,6 +14,7 @@ export interface MovieSearchHit {
   platform: OTTPlatform;
   criticLine: string;
   matchScore: number;
+  matchReason?: string;
 }
 
 export interface MovieSearchResponse {
@@ -32,20 +37,103 @@ function englishSlugFromPath(fullPath?: string): string | undefined {
   return slug.replace(/-/g, " ");
 }
 
-function matchScore(query: string, movie: CuratedMovie): number {
-  const normalizedQuery = normalizeText(query);
-  if (!normalizedQuery) return 0;
+function titleWordScore(normalizedQuery: string, title: string): number {
+  const normalizedTitle = normalizeText(title);
+  if (normalizedTitle === normalizedQuery) return 100;
+  if (normalizedTitle.startsWith(normalizedQuery)) return 90;
+  if (normalizedTitle.includes(normalizedQuery)) return 78;
 
-  const title = normalizeText(movie.title);
-  const english = englishSlugFromPath(movie.fullPath);
-  const normalizedEnglish = english ? normalizeText(english) : "";
-
-  if (title === normalizedQuery || normalizedEnglish === normalizedQuery) return 100;
-  if (title.startsWith(normalizedQuery) || normalizedEnglish.startsWith(normalizedQuery)) {
-    return 90;
+  for (const segment of title.split(/\s+/)) {
+    const normalizedSegment = normalizeText(segment);
+    if (!normalizedSegment) continue;
+    if (normalizedSegment === normalizedQuery) return 88;
+    if (normalizedSegment.startsWith(normalizedQuery)) return 84;
+    if (normalizedQuery.length >= 2 && normalizedSegment.includes(normalizedQuery)) {
+      return 80;
+    }
   }
-  if (title.includes(normalizedQuery) || normalizedEnglish.includes(normalizedQuery)) {
-    return 75;
+
+  return 0;
+}
+
+function buildHaystack(movie: CuratedMovie): string {
+  const index = getSearchIndexEntry(movie);
+  const english = englishSlugFromPath(movie.fullPath);
+  const parts = [
+    movie.title,
+    english,
+    index?.englishTitle,
+    ...(index?.aliases ?? []),
+    ...(index?.directors ?? []),
+    ...(movie.genres ?? []),
+    movie.overview,
+    movie.description,
+  ];
+  return parts.filter(Boolean).join(" ");
+}
+
+function metadataScore(normalizedQuery: string, movie: CuratedMovie): number {
+  const index = getSearchIndexEntry(movie);
+  if (!index) return 0;
+
+  let score = 0;
+
+  if (index.englishTitle) {
+    const english = normalizeText(index.englishTitle);
+    if (english === normalizedQuery) score = Math.max(score, 98);
+    else if (english.startsWith(normalizedQuery)) score = Math.max(score, 92);
+    else if (english.includes(normalizedQuery)) score = Math.max(score, 86);
+  }
+
+  for (const alias of index.aliases ?? []) {
+    const normalizedAlias = normalizeText(alias);
+    if (normalizedAlias === normalizedQuery) score = Math.max(score, 96);
+    else if (normalizedAlias.includes(normalizedQuery)) score = Math.max(score, 84);
+  }
+
+  for (const director of index.directors ?? []) {
+    const normalizedDirector = normalizeText(director);
+    if (normalizedDirector === normalizedQuery) score = Math.max(score, 88);
+    else if (normalizedDirector.includes(normalizedQuery)) score = Math.max(score, 82);
+  }
+
+  return score;
+}
+
+function matchReasonForScore(
+  score: number,
+  movie: CuratedMovie,
+  normalizedQuery: string
+): string | undefined {
+  const index = getSearchIndexEntry(movie);
+  if (index?.englishTitle && normalizeText(index.englishTitle).includes(normalizedQuery)) {
+    return `영문 제목: ${index.englishTitle}`;
+  }
+  if (index?.directors?.some((name) => normalizeText(name).includes(normalizedQuery))) {
+    return `감독: ${index.directors.join(", ")}`;
+  }
+  if (score >= 80) return "제목 일치";
+  return undefined;
+}
+
+function matchScore(query: string, movie: CuratedMovie): number {
+  const normalizedQuery = normalizeText(query.trim());
+  if (!normalizedQuery || normalizedQuery.length < 2) return 0;
+
+  let score = titleWordScore(normalizedQuery, movie.title);
+  score = Math.max(score, metadataScore(normalizedQuery, movie));
+
+  const english = englishSlugFromPath(movie.fullPath);
+  if (english) {
+    const normalizedEnglish = normalizeText(english);
+    if (normalizedEnglish === normalizedQuery) score = Math.max(score, 94);
+    else if (normalizedEnglish.startsWith(normalizedQuery)) score = Math.max(score, 88);
+    else if (normalizedEnglish.includes(normalizedQuery)) score = Math.max(score, 82);
+  }
+
+  const haystack = normalizeText(buildHaystack(movie));
+  if (haystack.includes(normalizedQuery)) {
+    score = Math.max(score, 68);
   }
 
   const queryTokens = query
@@ -53,13 +141,22 @@ function matchScore(query: string, movie: CuratedMovie): number {
     .split(/\s+/)
     .map(normalizeText)
     .filter((token) => token.length >= 2);
-  if (queryTokens.length === 0) return 0;
 
-  const haystack = `${title} ${normalizedEnglish}`;
-  const matchedTokens = queryTokens.filter((token) => haystack.includes(token));
-  if (matchedTokens.length === 0) return 0;
+  if (queryTokens.length > 0) {
+    const matchedTokens = queryTokens.filter((token) => haystack.includes(token));
+    if (matchedTokens.length > 0) {
+      score = Math.max(
+        score,
+        52 + (matchedTokens.length / queryTokens.length) * 24
+      );
+    }
+  }
 
-  return 40 + (matchedTokens.length / queryTokens.length) * 30;
+  if (movie.imdbId && lookupDirectorImdbIds(query).includes(movie.imdbId)) {
+    score = Math.max(score, 86);
+  }
+
+  return score;
 }
 
 function criticLineForTier(movie: CuratedMovie, tier: MovieTier): string {
@@ -72,13 +169,18 @@ export function searchMoviesInPool(
   movies: CuratedMovie[],
   limit = 12
 ): MovieSearchHit[] {
+  const normalizedQuery = normalizeText(query.trim());
+
   const scored = movies
-    .map((movie) => ({
-      movie,
-      tier: classifyMovie(movie),
-      platform: movie.platform,
-      matchScore: matchScore(query, movie),
-    }))
+    .map((movie) => {
+      const score = matchScore(query, movie);
+      return {
+        movie,
+        tier: classifyMovie(movie),
+        platform: movie.platform,
+        matchScore: score,
+      };
+    })
     .filter((row) => row.matchScore > 0)
     .sort((a, b) => {
       if (b.matchScore !== a.matchScore) return b.matchScore - a.matchScore;
@@ -91,6 +193,7 @@ export function searchMoviesInPool(
       platform: row.platform,
       matchScore: row.matchScore,
       criticLine: criticLineForTier(row.movie, row.tier),
+      matchReason: matchReasonForScore(row.matchScore, row.movie, normalizedQuery),
     }));
 
   return scored;

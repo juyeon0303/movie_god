@@ -5,18 +5,12 @@ import { Loader2, Search } from "lucide-react";
 import type { MovieSearchHit } from "@/lib/movie-search";
 import type { OTTPlatform } from "@/lib/types";
 import { PLATFORMS } from "@/lib/types";
-import { MovieCard } from "./MovieCard";
+import { SearchResultCard } from "./SearchResultCard";
 import { WakeUpWait } from "./WakeUpWait";
 
 interface MovieSearchProps {
   platform: OTTPlatform;
 }
-
-const TIER_LABEL = {
-  curated: { text: "Approved", className: "border-emerald/40 bg-emerald/10 text-emerald" },
-  trash: { text: "Trash Cut", className: "border-laser/40 bg-laser/10 text-laser" },
-  neutral: { text: "분류 없음", className: "border-panel-border bg-surface-raised text-panel-muted" },
-} as const;
 
 export function MovieSearch({ platform }: MovieSearchProps) {
   const [query, setQuery] = useState("");
@@ -75,7 +69,7 @@ export function MovieSearch({ platform }: MovieSearchProps) {
           <h2 className="font-ui text-sm font-semibold text-gold">영화 검색</h2>
         </div>
         <p className="font-ui mt-1 text-sm text-panel-muted">
-          보고 싶은 영화 제목을 검색하면 Approved / Trash Cut 분류를 확인할 수 있어요
+          제목, 영문 제목, 감독 이름으로 Approved / Trash Cut 분류를 확인할 수 있어요
         </p>
       </div>
 
@@ -93,7 +87,7 @@ export function MovieSearch({ platform }: MovieSearchProps) {
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            placeholder="예: 기생충, 인터스텔라"
+            placeholder="예: parasite, 봉준호, 라이언"
             className="font-ui min-w-0 flex-1 bg-transparent text-base text-panel-ink placeholder:text-panel-muted/80 focus:outline-none"
           />
           <button
@@ -147,41 +141,10 @@ export function MovieSearch({ platform }: MovieSearchProps) {
         )}
 
         {!loading && results.length > 0 && (
-          <div className="mt-6 space-y-4">
-            {results.map((hit) => {
-              const tier = TIER_LABEL[hit.tier];
-              const isTrash = hit.tier === "trash";
-
-              return (
-                <div key={`${hit.platform}-${hit.movie.id}`} className="space-y-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={`font-ui border px-2 py-0.5 text-[11px] font-semibold ${tier.className}`}
-                    >
-                      {tier.text}
-                    </span>
-                    <span
-                      className="font-ui text-xs font-semibold"
-                      style={{ color: PLATFORMS[hit.platform].color }}
-                    >
-                      {PLATFORMS[hit.platform].name}
-                    </span>
-                    {hit.movie.year && (
-                      <span className="font-ui text-xs text-panel-muted">{hit.movie.year}</span>
-                    )}
-                  </div>
-                  <MovieCard
-                    movie={{
-                      ...hit.movie,
-                      criticLine: hit.criticLine,
-                      isTrash,
-                    }}
-                    showCritic
-                    hellMode={isTrash}
-                  />
-                </div>
-              );
-            })}
+          <div className="mt-6 grid grid-cols-1 gap-3 lg:grid-cols-2">
+            {results.map((hit) => (
+              <SearchResultCard key={`${hit.platform}-${hit.movie.id}`} hit={hit} />
+            ))}
           </div>
         )}
       </div>
