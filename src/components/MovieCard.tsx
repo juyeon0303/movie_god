@@ -21,18 +21,32 @@ function ScoreBlock({
   label,
   value,
   accent,
+  compact,
 }: {
   label: string;
   value?: number;
   accent: "emerald" | "laser";
+  compact?: boolean;
 }) {
   if (value === undefined) return null;
   const color = accent === "laser" ? "text-laser" : "text-emerald";
 
   return (
     <div className="flex flex-col">
-      <span className={`font-mono text-3xl font-bold leading-none ${color}`}>{value}</span>
-      <span className="font-ui mt-0.5 text-xs font-medium text-panel-muted">{label}</span>
+      <span
+        className={`font-mono font-bold leading-none ${color} ${
+          compact ? "text-2xl" : "text-3xl"
+        }`}
+      >
+        {value}
+      </span>
+      <span
+        className={`font-ui mt-0.5 font-medium text-panel-muted ${
+          compact ? "text-[11px]" : "text-xs"
+        }`}
+      >
+        {label}
+      </span>
     </div>
   );
 }
@@ -126,20 +140,58 @@ export function MovieCard({ movie, hellMode = false }: MovieCardProps) {
         )}
       </div>
 
-      <div className="flex flex-1 flex-col border-t border-panel-border p-4">
-        <h3 className="text-base font-semibold leading-snug text-panel-ink">
+      <div
+        className={`flex flex-1 flex-col border-t border-panel-border ${
+          isTrash ? "p-3" : "p-4"
+        }`}
+      >
+        <h3
+          className={`font-semibold leading-snug text-panel-ink ${
+            isTrash ? "text-sm" : "text-base"
+          }`}
+        >
           {movie.title}
           {movie.year && (
-            <span className="ml-1.5 text-sm font-normal text-panel-muted">{movie.year}</span>
+            <span
+              className={`ml-1.5 font-normal text-panel-muted ${
+                isTrash ? "text-xs" : "text-sm"
+              }`}
+            >
+              {movie.year}
+            </span>
           )}
         </h3>
 
-        <div className="mt-3 flex flex-wrap items-end gap-4">
-          <ScoreBlock label="Blend" value={criticScore ?? undefined} accent={accent} />
-          <ScoreBlock label="MC" value={movie.scores.metacritic} accent={accent} />
-          <ScoreBlock label="RT" value={movie.scores.rottenTomatoes} accent={accent} />
+        <div
+          className={`mt-2 flex flex-wrap items-end ${
+            isTrash ? "gap-3" : "mt-3 gap-4"
+          }`}
+        >
+          <ScoreBlock
+            label="Blend"
+            value={criticScore ?? undefined}
+            accent={accent}
+            compact={isTrash}
+          />
+          <ScoreBlock
+            label="MC"
+            value={movie.scores.metacritic}
+            accent={accent}
+            compact={isTrash}
+          />
+          <ScoreBlock
+            label="RT"
+            value={movie.scores.rottenTomatoes}
+            accent={accent}
+            compact={isTrash}
+          />
           {movie.scores.leeDongjin !== undefined && (
-            <ScoreBlock label="LDJ" value={movie.scores.leeDongjin} accent={accent} />
+            <ScoreBlock
+              label="LDJ"
+              value={movie.scores.leeDongjin}
+              accent={accent}
+              compact={isTrash}
+            />
           )}
         </div>
 
@@ -149,10 +201,10 @@ export function MovieCard({ movie, hellMode = false }: MovieCardProps) {
             target="_blank"
             rel="noopener noreferrer"
             onClick={handleWatchClick}
-            className={`font-ui mt-3 flex items-center justify-center gap-2 border py-2.5 text-xs font-semibold transition-colors ${
+            className={`font-ui flex items-center justify-center gap-2 border text-xs font-semibold transition-colors ${
               isTrash
-                ? "border-laser/50 bg-laser/10 text-laser hover:bg-laser/15"
-                : "border-emerald/50 bg-emerald/10 text-emerald hover:bg-emerald/15"
+                ? "mt-2 border-laser/50 bg-laser/10 py-2 text-laser hover:bg-laser/15"
+                : "mt-3 border-emerald/50 bg-emerald/10 py-2.5 text-emerald hover:bg-emerald/15"
             }`}
           >
             <ExternalLink className="h-3.5 w-3.5" />
@@ -161,7 +213,7 @@ export function MovieCard({ movie, hellMode = false }: MovieCardProps) {
         )}
 
         {watchWarn && movie.watchUrl && (
-          <div className="mt-3 border border-laser/30 bg-laser/5 p-3">
+          <div className={`border border-laser/30 bg-laser/5 ${isTrash ? "mt-2 p-2.5" : "mt-3 p-3"}`}>
             <p className="font-ui text-xs text-panel-muted">
               Trash Cut에 포함된 작품이에요. 그래도 시청하시겠어요?
             </p>
