@@ -1,16 +1,22 @@
 import { applyFilters, findTierOverlap } from "./filters";
+import { normalizeMovieTitle } from "./title-display";
 import { loadTierSnapshot } from "./snapshot-store";
 import type { TierSnapshot } from "./snapshot-types";
 import type { CurationFilters, CuratedMovie, OTTPlatform } from "./types";
+
+function normalizePool(movies: CuratedMovie[]): CuratedMovie[] {
+  return movies.map(normalizeMovieTitle);
+}
 
 function deriveTiersFromSnapshot(snapshot: TierSnapshot): Pick<
   TierSnapshot,
   "curated" | "trash" | "all"
 > {
-  const pool =
+  const pool = normalizePool(
     snapshot.all.length > 0
       ? snapshot.all
-      : [...snapshot.curated, ...snapshot.trash];
+      : [...snapshot.curated, ...snapshot.trash]
+  );
 
   let curated = applyFilters(pool, { platform: snapshot.platform, mode: "curated" });
   let trash = applyFilters(pool, { platform: snapshot.platform, mode: "trash" });

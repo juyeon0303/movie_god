@@ -1,7 +1,8 @@
 import { promises as fs } from "fs";
 import path from "path";
+import { normalizeMovieTitle } from "./title-display";
 import type { TierSnapshot } from "./snapshot-types";
-import type { OTTPlatform } from "./types";
+import type { CuratedMovie, OTTPlatform } from "./types";
 
 const SNAPSHOT_DIR = path.join(process.cwd(), "data", "snapshots");
 
@@ -51,11 +52,23 @@ export async function initSnapshotStore(): Promise<void> {
   }
 }
 
+function normalizeSnapshot(snapshot: TierSnapshot): TierSnapshot {
+  const normalizeList = (movies: CuratedMovie[]) => movies.map(normalizeMovieTitle);
+
+  return {
+    ...snapshot,
+    curated: normalizeList(snapshot.curated),
+    trash: normalizeList(snapshot.trash),
+    all: normalizeList(snapshot.all),
+  };
+}
+
 export async function saveTierSnapshot(snapshot: TierSnapshot): Promise<void> {
+  const normalized = normalizeSnapshot(snapshot);
   await ensureSnapshotDir();
   await fs.writeFile(
-    snapshotFile(snapshot.platform),
-    JSON.stringify(snapshot),
+    snapshotFile(normalized.platform),
+    JSON.stringify(normalized),
     "utf-8"
   );
 
@@ -72,7 +85,7 @@ export async function saveTierSnapshot(snapshot: TierSnapshot): Promise<void> {
            payload = EXCLUDED.payload,
            fetched_at = EXCLUDED.fetched_at,
            updated_at = NOW()`,
-        [snapshot.platform, JSON.stringify(snapshot), snapshot.fetchedAt]
+        [snapshot.platform, JSON.stringify(normalized), snapshot.fetchedAt]
       );
     } finally {
       await pool.end();

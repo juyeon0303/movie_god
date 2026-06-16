@@ -2,6 +2,7 @@ import type { CuratedMovie, OTTPlatform } from "./types";
 import { PLATFORMS } from "./types";
 import { parseTmdbIdFromJustWatchId } from "./tmdb";
 import { validateOttOffer } from "./ott-verify";
+import { normalizeDisplayTitle } from "./title-display";
 
 const JUSTWATCH_GRAPHQL = "https://apis.justwatch.com/graphql";
 
@@ -153,7 +154,7 @@ function nodeToMovie(node: JustWatchNode, platform: OTTPlatform): CuratedMovie |
     id: node.id,
     imdbId: node.content.externalIds?.imdbId,
     tmdbId: parseTmdbIdFromJustWatchId(node.id) ?? undefined,
-    title: node.content.title,
+    title: normalizeDisplayTitle(node.content.title),
     year: node.content.originalReleaseYear,
     posterUrl: resolvePosterUrl(node.content.posterUrl),
     description: node.content.shortDescription,

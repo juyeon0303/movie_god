@@ -1,4 +1,5 @@
 import type { CuratedMovie } from "./types";
+import { pickEnrichedTitle } from "./title-display";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500";
@@ -97,7 +98,7 @@ export async function enrichMovieWithTmdb(movie: CuratedMovie): Promise<CuratedM
   return {
     ...movie,
     tmdbId,
-    title: details.title || movie.title,
+    title: pickEnrichedTitle(movie.title, details.title),
     overview: details.overview || movie.description,
     description: details.overview || movie.description,
     genres: details.genres.map((g) => g.name),
